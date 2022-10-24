@@ -7,14 +7,10 @@ pub struct OutscaleApiInput {
 }
 
 impl OutscaleApiInput {
-    pub fn new(profile_name: Option<String>) -> Result<OutscaleApiInput, Box<dyn error::Error>> {
+    pub fn new(profile_name: String) -> Result<OutscaleApiInput, Box<dyn error::Error>> {
         let config_file = ConfigurationFile::load_default()?;
-        let config = match profile_name {
-            Some(name) => config_file.configuration(name)?,
-            None => config_file.configuration("default")?,
-        };
         Ok(OutscaleApiInput {
-            config: config,
+            config: config_file.configuration(profile_name)?,
         })
     }
 }
