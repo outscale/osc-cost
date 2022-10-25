@@ -1,15 +1,18 @@
 use std::error;
-use rand::{thread_rng, Rng};
-use rand::rngs::ThreadRng;
 use std::thread::sleep;
 use std::time::Duration;
+use std::convert::From;
+use rand::{thread_rng, Rng};
+use rand::rngs::ThreadRng;
+use http::status::StatusCode;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse};
-use outscale_api::apis::vm_api::{read_vms};
-use http::status::StatusCode;
+use outscale_api::apis::vm_api::read_vms;
+use crate::core;
 use crate::debug;
+use crate::VERSION;
 
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
@@ -85,3 +88,36 @@ impl OutscaleApiInput {
     }
 }
 
+impl From<OutscaleApiInput> for core::Resources {
+    fn from(input: OutscaleApiInput) -> Self {
+        let mut resources = core::Resources {
+            vms: Vec::new(),
+        };
+
+        for _vm in input.vms {
+            let core_vm = core::Vm {
+                osc_cost_version: Some(String::from(VERSION)),
+                account_id: None,
+                resource_type: None,
+                read_date_epoch: None,
+                region: None,
+                resource_id: None,
+                currency: None,
+                price_per_hour: None,
+                price_per_month: None,
+                vm_type: None,
+                vm_vcpu_gen: None,
+                vm_core_performance: None,
+                vm_omi: None,
+                vm_product_id: None,
+                vm_vcpu: 0,
+                vm_ram_gb: 0,
+                price_vcpu_per_hour: 0_f32,
+                price_ram_gb_per_hour: 0_f32,
+                price_product_per_cpu_per_hour: 0_f32,
+            };
+            resources.vms.push(core_vm);
+        }
+        return resources;
+    }
+}
