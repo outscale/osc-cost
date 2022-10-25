@@ -16,12 +16,14 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let _oapi_input = match OutscaleApiInput::new(args.profile) {
+    let mut oapi_input = match OutscaleApiInput::new(args.profile) {
         Ok(input) => input,
         Err(e) => {
             eprintln!("error: cannot load Outscale API as default: {:?}", e);
             exit(1);
         }
     };
-    println!("ready to make requests");
+    if let Err(error) = oapi_input.fetch() {
+        eprintln!("error while fetching ressources: {:?}", error);
+    }
 }
