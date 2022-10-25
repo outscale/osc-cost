@@ -8,8 +8,9 @@ use http::status::StatusCode;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::Error::ResponseError;
-use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse};
+use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry};
 use outscale_api::apis::vm_api::read_vms;
+use outscale_api::apis::catalog_api::read_catalog;
 use crate::core;
 use crate::debug;
 use crate::VERSION;
@@ -21,6 +22,7 @@ pub struct Input {
     config: Configuration,
     rng: ThreadRng,
     pub vms: Vec::<Vm>,
+    pub catalog: Vec<CatalogEntry>,
 }
 
 impl Input {
@@ -30,11 +32,13 @@ impl Input {
             config: config_file.configuration(profile_name)?,
             rng: thread_rng(),
             vms: Vec::new(),
+            catalog: Vec::new(),
         })
     }
 
     pub fn fetch(&mut self) -> Result<(), Box<dyn error::Error>> {
         self.fetch_vms()?;
+        self.fetch_catalog()?;
         Ok(())
     }
 
@@ -65,6 +69,42 @@ impl Input {
         return Ok(())
     }
 
+    fn fetch_catalog(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let result: ReadCatalogResponse = loop {
+            let request = ReadCatalogRequest::new();
+            let response = read_catalog(&self.config, Some(request));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+
+        let catalog = match result.catalog {
+            Some(catalog) => catalog,
+            None => {
+                if debug() {
+                    eprintln!("warning: no catalog provided");
+                }
+                return Ok(());
+            },
+        };
+
+        self.catalog = match catalog.entries {
+            Some(entries) => entries,
+            None => {
+                if debug() {
+                    eprintln!("warning: no catalog entries provided");
+                }
+                return Ok(());
+            }
+        };
+        if debug() {
+            eprintln!("info: fetched {} catalog entries", self.catalog.len());
+        }
+        return Ok(())
+    }
+
     fn random_wait(&mut self) {
         let wait_time_ms = self.rng.gen_range(THROTTLING_MIN_WAIT_MS..THROTTLING_MAX_WAIT_MS);
         if debug() {
@@ -73,7 +113,7 @@ impl Input {
         sleep(Duration::from_millis(wait_time_ms));
     }
 
-    fn is_throttled<T>(result: &Result<ReadVmsResponse, outscale_api::apis::Error<T>>) -> bool {
+    fn is_throttled<S, T>(result: &Result<S, outscale_api::apis::Error<T>>) -> bool {
         match result {
             Ok(_) => false,
             Err(error) => match error {

@@ -24,7 +24,7 @@ fn main() {
         eprintln!("error while fetching ressources: {:?}", error);
     }
     let ressources = core::Resources::from(oapi_input);
-    eprintln!("debug: resources has {} vms", ressources.vms.len());
+    eprintln!("info: generated resources has {} vms", ressources.vms.len());
 }
 
 #[derive(Parser, Debug)]
