@@ -17,16 +17,16 @@ use crate::VERSION;
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
-pub struct OutscaleApiInput {
+pub struct Input {
     config: Configuration,
     rng: ThreadRng,
     pub vms: Vec::<Vm>,
 }
 
-impl OutscaleApiInput {
-    pub fn new(profile_name: String) -> Result<OutscaleApiInput, Box<dyn error::Error>> {
+impl Input {
+    pub fn new(profile_name: String) -> Result<Input, Box<dyn error::Error>> {
         let config_file = ConfigurationFile::load_default()?;
-        Ok(OutscaleApiInput {
+        Ok(Input {
             config: config_file.configuration(profile_name)?,
             rng: thread_rng(),
             vms: Vec::new(),
@@ -43,7 +43,7 @@ impl OutscaleApiInput {
         let result: ReadVmsResponse = loop {
             let request = ReadVmsRequest::new();
             let response = read_vms(&self.config, Some(request));
-            if OutscaleApiInput::is_throttled(&response) {
+            if Input::is_throttled(&response) {
                 self.random_wait();
                 continue;
             }
@@ -88,8 +88,8 @@ impl OutscaleApiInput {
     }
 }
 
-impl From<OutscaleApiInput> for core::Resources {
-    fn from(input: OutscaleApiInput) -> Self {
+impl From<Input> for core::Resources {
+    fn from(input: Input) -> Self {
         let mut resources = core::Resources {
             vms: Vec::new(),
         };

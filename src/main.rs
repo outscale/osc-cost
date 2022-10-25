@@ -1,5 +1,4 @@
 use std::process::exit;
-use oapi::OutscaleApiInput;
 use clap::Parser;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -14,7 +13,7 @@ fn main() {
         set_debug_on();
     }
 
-    let mut oapi_input = match OutscaleApiInput::new(args.profile) {
+    let mut oapi_input = match oapi::Input::new(args.profile) {
         Ok(input) => input,
         Err(e) => {
             eprintln!("error: cannot load Outscale API as default: {:?}", e);
