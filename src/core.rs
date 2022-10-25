@@ -13,6 +13,14 @@ impl Resources {
         }
         Ok(())
     }
+
+    pub fn cost_per_hour(&self) -> Result<f32, ResourceError> {
+        let mut total = 0f32;
+        for vm in &self.vms {
+            total += vm.price_per_hour()?
+        }
+        return Ok(total);
+    }
 }
 
 pub enum ResourceError {

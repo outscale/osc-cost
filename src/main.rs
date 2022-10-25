@@ -31,6 +31,15 @@ fn main() {
         eprintln!("Cannot compute ressource costs: {}", error);
         exit(1);
     }
+
+    let cost_per_hour = match resources.cost_per_hour() {
+        Ok(cost) => cost,
+        Err(error) => {
+            eprintln!("Cannot compute cost per ressource costs: {}", error);
+            exit(1);
+        }
+    };
+    println!("{}", cost_per_hour);
 }
 
 #[derive(Parser, Debug)]
