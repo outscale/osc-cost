@@ -23,8 +23,14 @@ fn main() {
     if let Err(error) = oapi_input.fetch() {
         eprintln!("error while fetching ressources: {:?}", error);
     }
-    let ressources = core::Resources::from(oapi_input);
-    eprintln!("info: generated resources has {} vms", ressources.vms.len());
+    let mut resources = core::Resources::from(oapi_input);
+    if debug() {
+        eprintln!("info: generated resources has {} vms", resources.vms.len());
+    }
+    if let Err(error) = resources.compute() {
+        eprintln!("Cannot compute ressource costs: {}", error);
+        exit(1);
+    }
 }
 
 #[derive(Parser, Debug)]

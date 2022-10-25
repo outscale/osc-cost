@@ -6,7 +6,16 @@ pub struct Resources {
     pub vms: Vec<Vm>,
 }
 
-enum ResourceError {
+impl Resources {
+    pub fn compute(&mut self) -> Result<(), ResourceError> {
+        for vm in self.vms.iter_mut() {
+            vm.compute()?;
+        }
+        Ok(())
+    }
+}
+
+pub enum ResourceError {
     NotComputed,
 }
 
