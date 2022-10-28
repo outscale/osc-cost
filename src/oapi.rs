@@ -22,11 +22,12 @@ static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
 type ImageId = String;
+type VmId = String;
 
 pub struct Input {
     config: Configuration,
     rng: ThreadRng,
-    pub vms: Vec::<Vm>,
+    pub vms: HashMap::<VmId, Vm>,
     pub vms_images: HashMap<ImageId, Image>,
     pub catalog: Vec<CatalogEntry>,
     pub account: Option<Account>,
@@ -38,7 +39,7 @@ impl Input {
         Ok(Input {
             config: config_file.configuration(profile_name)?,
             rng: thread_rng(),
-            vms: Vec::new(),
+            vms: HashMap::<VmId, Vm>::new(),
             vms_images: HashMap::<ImageId, Image>::new(),
             catalog: Vec::new(),
             account: None,
@@ -64,7 +65,7 @@ impl Input {
             break response?;
         };
 
-        self.vms = match result.vms {
+        let vms = match result.vms {
             None => {
                 if debug() {
                     eprintln!("warning: no vm list provided");
@@ -73,6 +74,19 @@ impl Input {
             },
             Some(vms) => vms,
         };
+        for vm in vms {
+            let vm_id = match &vm.vm_id {
+                Some(id) => id,
+                None => {
+                    if debug() {
+                        eprintln!("warning: vm has no id");
+                    }
+                    continue;
+                }
+            };
+            self.vms.insert(vm_id.clone(), vm);
+        }
+
         if debug() {
             eprintln!("info: fetched {} vms", self.vms.len());
         }
@@ -82,15 +96,8 @@ impl Input {
     fn fetch_vms_images(&mut self) -> Result<(), Box<dyn error::Error>> {
         // Collect all unique images
         let mut images = Vec::<ImageId>::new();
-        for vm in &self.vms {
-            let image_id = match &vm.image_id {
-                Some(id) => id,
-                None => {
-                    eprintln!("warning: vm does not image id");
-                    continue;
-                }
-            };
-            images.push(image_id.clone());
+        for (vm_id, _vm) in &self.vms {
+            images.push(vm_id.clone());
         }
         images.dedup();
         let mut filters_image = FiltersImage::new();
@@ -227,7 +234,7 @@ impl From<Input> for core::Resources {
             vms: Vec::new(),
         };
 
-        for _vm in input.vms {
+        for (_vm_id, _vm) in &input.vms {
             let core_vm = core::Vm {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: None,
