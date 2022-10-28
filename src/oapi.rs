@@ -2,13 +2,15 @@ use std::error;
 use std::thread::sleep;
 use std::time::Duration;
 use std::convert::From;
+use std::collections::HashMap;
+use outscale_api::apis::image_api::read_images;
 use rand::{thread_rng, Rng};
 use rand::rngs::ThreadRng;
 use http::status::StatusCode;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::Error::ResponseError;
-use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry};
+use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry, Image, ReadImagesRequest, FiltersImage, ReadImagesResponse};
 use outscale_api::apis::vm_api::read_vms;
 use outscale_api::apis::catalog_api::read_catalog;
 use crate::core;
@@ -18,10 +20,13 @@ use crate::VERSION;
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
+type ImageId = String;
+
 pub struct Input {
     config: Configuration,
     rng: ThreadRng,
     pub vms: Vec::<Vm>,
+    pub vms_images: HashMap<ImageId, Image>,
     pub catalog: Vec<CatalogEntry>,
 }
 
@@ -32,16 +37,17 @@ impl Input {
             config: config_file.configuration(profile_name)?,
             rng: thread_rng(),
             vms: Vec::new(),
+            vms_images: HashMap::<ImageId, Image>::new(),
             catalog: Vec::new(),
         })
     }
 
     pub fn fetch(&mut self) -> Result<(), Box<dyn error::Error>> {
         self.fetch_vms()?;
+        self.fetch_vms_images()?;
         self.fetch_catalog()?;
         Ok(())
     }
-
 
     fn fetch_vms(&mut self) -> Result<(), Box<dyn error::Error>> {
         let result: ReadVmsResponse = loop {
@@ -65,6 +71,53 @@ impl Input {
         };
         if debug() {
             eprintln!("info: fetched {} vms", self.vms.len());
+        }
+        return Ok(())
+    }
+
+    fn fetch_vms_images(&mut self) -> Result<(), Box<dyn error::Error>> {
+        // Collect all unique images
+        let mut images = Vec::<ImageId>::new();
+        for vm in &self.vms {
+            let image_id = match &vm.image_id {
+                Some(id) => id,
+                None => {
+                    eprintln!("warning: vm does not image id");
+                    continue;
+                }
+            };
+            images.push(image_id.clone());
+        }
+        images.dedup();
+        let mut filters_image = FiltersImage::new();
+        filters_image.image_ids = Some(images);
+        let mut request = ReadImagesRequest::new();
+        request.filters = Some(Box::new(filters_image));
+        let result: ReadImagesResponse = loop {
+            let response = read_images(&self.config, Some(request.clone()));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+
+        let images = match result.images {
+            None => {
+                if debug() {
+                    eprintln!("warning: no image list provided");
+                }
+                return Ok(());
+            },
+            Some(images) => images,
+        };
+        for image in images {
+            let image_id = image.image_id.clone().unwrap_or(String::from(""));
+            self.vms_images.insert(image_id, image);
+        }
+
+        if debug() {
+            eprintln!("info: fetched {} images used by vms", self.vms_images.len());
         }
         return Ok(())
     }
@@ -148,7 +201,7 @@ impl From<Input> for core::Resources {
                 vm_type: None,
                 vm_vcpu_gen: None,
                 vm_core_performance: None,
-                vm_omi: None,
+                vm_image: None,
                 vm_product_id: None,
                 vm_vcpu: 0,
                 vm_ram_gb: 0,

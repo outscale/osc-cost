@@ -58,7 +58,7 @@ pub struct Vm {
     pub vm_type: Option<String>,
     pub vm_vcpu_gen: Option<String>,
     pub vm_core_performance: Option<String>,
-    pub vm_omi: Option<String>,
+    pub vm_image: Option<String>,
     pub vm_product_id: Option<String>,
     // Mandatory to compute price
     pub vm_vcpu: usize,
