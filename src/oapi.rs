@@ -3,18 +3,20 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::convert::From;
 use std::collections::HashMap;
-use outscale_api::apis::account_api::read_accounts;
-use outscale_api::apis::image_api::read_images;
+use outscale_api::apis::subregion_api::read_subregions;
 use rand::{thread_rng, Rng};
 use rand::rngs::ThreadRng;
 use http::status::StatusCode;
+use chrono::{DateTime, Utc};
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::Error::ResponseError;
-use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry, Image, ReadImagesRequest, FiltersImage, ReadImagesResponse, Account, ReadAccountsResponse, ReadAccountsRequest};
+use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry, Image, ReadImagesRequest, FiltersImage, ReadImagesResponse, Account, ReadAccountsResponse, ReadAccountsRequest, ReadSubnetsResponse, ReadSubregionsRequest, ReadSubregionsResponse};
 use outscale_api::apis::vm_api::read_vms;
 use outscale_api::apis::catalog_api::read_catalog;
-use crate::core;
+use outscale_api::apis::account_api::read_accounts;
+use outscale_api::apis::image_api::read_images;
+use crate::core::{self, Resources};
 use crate::debug;
 use crate::VERSION;
 
@@ -23,14 +25,19 @@ static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
 type ImageId = String;
 type VmId = String;
+// This string correspond to pure internal forged identifier of a catalog entry.
+// format!("{}:{}", entry.service, entry.type);
+type CatalogId = String;
 
 pub struct Input {
     config: Configuration,
     rng: ThreadRng,
     pub vms: HashMap::<VmId, Vm>,
     pub vms_images: HashMap<ImageId, Image>,
-    pub catalog: Vec<CatalogEntry>,
+    pub catalog: HashMap<CatalogId, CatalogEntry>,
     pub account: Option<Account>,
+    pub region: Option<String>,
+    pub fetch_date: Option<DateTime<Utc>>,
 }
 
 impl Input {
@@ -41,16 +48,20 @@ impl Input {
             rng: thread_rng(),
             vms: HashMap::<VmId, Vm>::new(),
             vms_images: HashMap::<ImageId, Image>::new(),
-            catalog: Vec::new(),
+            catalog: HashMap::<CatalogId, CatalogEntry>::new(),
             account: None,
+            region: None,
+            fetch_date: None,
         })
     }
 
     pub fn fetch(&mut self) -> Result<(), Box<dyn error::Error>> {
+        self.fetch_date = Some(Utc::now());
         self.fetch_vms()?;
         self.fetch_vms_images()?;
         self.fetch_catalog()?;
         self.fetch_account()?;
+        self.fetch_region()?;
         Ok(())
     }
 
@@ -154,7 +165,7 @@ impl Input {
             },
         };
 
-        self.catalog = match catalog.entries {
+        let catalog = match catalog.entries {
             Some(entries) => entries,
             None => {
                 if debug() {
@@ -163,6 +174,29 @@ impl Input {
                 return Ok(());
             }
         };
+        for entry in catalog {
+            let _type = match &entry._type {
+                Some(t) => t.clone(),
+                None => {
+                    if debug() {
+                        eprintln!("warning: catalog entry as no type");
+                    }
+                    continue;
+                }
+            };
+            let service = match &entry.service {
+                Some(t) => t.clone(),
+                None => {
+                    if debug() {
+                        eprintln!("warning: catalog entry as no service");
+                    }
+                    continue;
+                }
+            };
+            let id = format!("{}:{}", service, _type);
+            self.catalog.insert(id, entry);
+        }
+
         if debug() {
             eprintln!("info: fetched {} catalog entries", self.catalog.len());
         }
@@ -205,6 +239,41 @@ impl Input {
         return Ok(())
     }
 
+    fn fetch_region(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let result: ReadSubregionsResponse = loop {
+            let request = ReadSubregionsRequest::new();
+            let response = read_subregions(&self.config, Some(request));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+
+        let subregions = match result.subregions {
+            None => {
+                if debug() {
+                    eprintln!("warning: no region available");
+                }
+                return Ok(());
+            },
+            Some(subregions) => subregions,
+        };
+        self.region = match subregions.iter().next() {
+            Some(subregion) => subregion.region_name.clone(),
+            None => {
+                if debug() {
+                    eprintln!("warning: no subregion in region list");
+                }
+                return Ok(());
+            }
+        };
+        if debug() {
+            eprintln!("info: fetched region details");
+        }
+        return Ok(())
+    }
+
     fn random_wait(&mut self) {
         let wait_time_ms = self.rng.gen_range(THROTTLING_MIN_WAIT_MS..THROTTLING_MAX_WAIT_MS);
         if debug() {
@@ -226,6 +295,112 @@ impl Input {
             }
         }
     }
+
+    fn account_id(&self) -> Option<String> {
+        match &self.account {
+            Some(account) => match &account.account_id {
+                Some(account_id) => Some(account_id.clone()),
+                None => None,
+            },
+            None => None,
+        }
+    }
+
+    fn fetch_date_rfc3339(&self) -> Option<String> {
+        match self.fetch_date {
+            Some(date) => Some(date.to_rfc3339()),
+            None => None,
+        }
+    }
+
+    fn vm_cpu_catalog_entry(&self, vm: &Vm) -> Option<CatalogEntry> {
+        let vm_type = match &vm.vm_type {
+            Some(vm_type) => vm_type,
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot get vm type in vm details");
+                }
+                return None;
+            }
+        };
+        let id = match vm_type.starts_with("tina") {
+            true => {
+                // format: tinav5.c2r4p1
+                //         0123456789012
+                let gen = match vm_type.chars().nth(5) {
+                    Some(c) => c,
+                    None => {
+                        if debug() {
+                            eprintln!("warning: cannot parse generation for tina type {}", vm_type);
+                        }
+                        return None;
+                    },
+                };
+                let perf = match vm_type.chars().nth(12) {
+                    Some(c) => c,
+                    None => {
+                        if debug() {
+                            eprintln!("warning: cannot parse performance for tina type {}", vm_type);
+                        }
+                        return None;
+                    },
+                };
+                format!("TinaOS-FCU:CustomCore:v{}-p{}", gen, perf)
+            },
+            false => format!("TinaOS-FCU:BoxUsage:{}", vm_type),
+        };
+        match self.catalog.get(&id) {
+            Some(entry) => Some(entry.clone()),
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot find cpu catalog entry for {}", vm_type);
+                }
+                None
+            }
+        }
+    }
+    
+    fn vm_price_vcpu_per_hour(&self, vm: &Vm) -> f32 {
+        match self.vm_cpu_catalog_entry(vm) {
+            Some(entry) => match entry.unit_price {
+                Some(price) => return price,
+                None => {
+                    if debug() {
+                        eprintln!("warning: entry price is not defined");
+                    }
+                    0.0
+                },
+            },
+            None => 0.0
+        }
+    }
+
+    fn fill_resource_vm(&self, resources: &mut Resources) {
+        for (vm_id, vm) in &self.vms {
+            let core_vm = core::Vm {
+                osc_cost_version: Some(String::from(VERSION)),
+                account_id: self.account_id(),
+                resource_type: Some(String::from("vm")),
+                read_date_rfc3339: self.fetch_date_rfc3339(),
+                region: self.region.clone(),
+                resource_id: Some(vm_id.clone()),
+                currency: None,
+                price_per_hour: None,
+                price_per_month: None,
+                vm_type: vm.vm_type.clone(),
+                vm_vcpu_gen: None,
+                vm_core_performance: vm.performance.clone(),
+                vm_image: vm.image_id.clone(),
+                vm_product_id: None,
+                vm_vcpu: 0,
+                vm_ram_gb: 0,
+                price_vcpu_per_hour: self.vm_price_vcpu_per_hour(&vm),
+                price_ram_gb_per_hour: 0_f32,
+                price_product_per_cpu_per_hour: 0_f32,
+            };
+            resources.vms.push(core_vm);
+        }
+    }
 }
 
 impl From<Input> for core::Resources {
@@ -233,31 +408,7 @@ impl From<Input> for core::Resources {
         let mut resources = core::Resources {
             vms: Vec::new(),
         };
-
-        for (_vm_id, _vm) in &input.vms {
-            let core_vm = core::Vm {
-                osc_cost_version: Some(String::from(VERSION)),
-                account_id: None,
-                resource_type: None,
-                read_date_epoch: None,
-                region: None,
-                resource_id: None,
-                currency: None,
-                price_per_hour: None,
-                price_per_month: None,
-                vm_type: None,
-                vm_vcpu_gen: None,
-                vm_core_performance: None,
-                vm_image: None,
-                vm_product_id: None,
-                vm_vcpu: 0,
-                vm_ram_gb: 0,
-                price_vcpu_per_hour: 0_f32,
-                price_ram_gb_per_hour: 0_f32,
-                price_product_per_cpu_per_hour: 0_f32,
-            };
-            resources.vms.push(core_vm);
-        }
+        input.fill_resource_vm(&mut resources);
         return resources;
     }
 }
