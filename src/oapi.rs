@@ -3,6 +3,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::convert::From;
 use std::collections::HashMap;
+use outscale_api::apis::account_api::read_accounts;
 use outscale_api::apis::image_api::read_images;
 use rand::{thread_rng, Rng};
 use rand::rngs::ThreadRng;
@@ -10,7 +11,7 @@ use http::status::StatusCode;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::Error::ResponseError;
-use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry, Image, ReadImagesRequest, FiltersImage, ReadImagesResponse};
+use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry, Image, ReadImagesRequest, FiltersImage, ReadImagesResponse, Account, ReadAccountsResponse, ReadAccountsRequest};
 use outscale_api::apis::vm_api::read_vms;
 use outscale_api::apis::catalog_api::read_catalog;
 use crate::core;
@@ -28,6 +29,7 @@ pub struct Input {
     pub vms: Vec::<Vm>,
     pub vms_images: HashMap<ImageId, Image>,
     pub catalog: Vec<CatalogEntry>,
+    pub account: Option<Account>,
 }
 
 impl Input {
@@ -39,6 +41,7 @@ impl Input {
             vms: Vec::new(),
             vms_images: HashMap::<ImageId, Image>::new(),
             catalog: Vec::new(),
+            account: None,
         })
     }
 
@@ -46,6 +49,7 @@ impl Input {
         self.fetch_vms()?;
         self.fetch_vms_images()?;
         self.fetch_catalog()?;
+        self.fetch_account()?;
         Ok(())
     }
 
@@ -154,6 +158,42 @@ impl Input {
         };
         if debug() {
             eprintln!("info: fetched {} catalog entries", self.catalog.len());
+        }
+        return Ok(())
+    }
+
+    fn fetch_account(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let result: ReadAccountsResponse = loop {
+            let request = ReadAccountsRequest::new();
+            let response = read_accounts(&self.config, Some(request));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+
+
+        let accounts = match result.accounts {
+            None => {
+                if debug() {
+                    eprintln!("warning: no account available");
+                }
+                return Ok(());
+            },
+            Some(accounts) => accounts,
+        };
+        self.account = match accounts.iter().next() {
+            Some(account) => Some(account.clone()),
+            None => {
+                if debug() {
+                    eprintln!("warning: no account in account list");
+                }
+                return Ok(());
+            }
+        };
+        if debug() {
+            eprintln!("info: fetched account details");
         }
         return Ok(())
     }
