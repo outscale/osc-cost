@@ -11,5 +11,5 @@ description = "osc-cost helps measuring Outscale infrastructure costs"
 [dependencies]
 clap = { version = "4.0.18", features = ["derive"] }
 http = "0.1.21"
-outscale_api = "1.1.0"
+outscale_api = { version = "1.2.0", features = ["rustls-tls"], default-features = false }
 rand = "0.8.5"
