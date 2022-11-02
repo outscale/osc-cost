@@ -96,6 +96,18 @@ impl Input {
             Some(vms) => vms,
         };
         for vm in vms {
+            if let Some(state) = &vm.state {
+                match state.as_str() {
+                    "running" | "stopping" | "shutting-down" => {},
+                    "pending" | "stopped" | "terminated" | "quarantine" => continue,
+                    _ => {
+                        if debug() {
+                            eprintln!("warning: un-managed vm state {} found", state);
+                        }
+                        continue
+                    },
+                };
+            }
             let vm_id = match &vm.vm_id {
                 Some(id) => id,
                 None => {
