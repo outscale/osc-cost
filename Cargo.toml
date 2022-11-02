@@ -16,3 +16,5 @@ lazy_static = "1.4.0"
 outscale_api = { version = "1.2.0", features = ["rustls-tls"], default-features = false }
 rand = "0.8.5"
 regex = "1.6.0"
+serde = "1.0.147"
+serde_json = "1.0.87"

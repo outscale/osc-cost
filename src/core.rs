@@ -1,4 +1,7 @@
 use std::fmt;
+use serde::Serialize;
+use serde_json;
+use crate::debug;
 
 static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
 
@@ -25,6 +28,24 @@ impl Resources {
     pub fn cost_per_month(&self) -> Result<f32, ResourceError> {
         Ok(self.cost_per_hour()? * HOURS_PER_MONTH)
     }
+
+    pub fn json(&self) -> serde_json::Result<String> {
+        let mut out = String::new();
+        for vm in &self.vms {
+            match serde_json::to_string(vm) {
+                Ok(serialized) => out.push_str(serialized.as_str()),
+                Err(e) => {
+                    if debug() {
+                        eprintln!("warning: provide vm serialization: {}", e);
+                    }
+                    continue;
+                }
+            };
+            out.push('\n');
+        }
+        out.pop();
+        Ok(out)
+    }
 }
 
 pub enum ResourceError {
@@ -44,6 +65,7 @@ trait Resource {
     fn compute(&mut self) -> Result<(), ResourceError>;
 }
 
+#[derive(Serialize)]
 pub struct Vm {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
