@@ -1052,8 +1052,10 @@ dependencies = [
  "chrono",
  "clap",
  "http 0.1.21",
+ "lazy_static",
  "outscale_api",
  "rand 0.8.5",
+ "regex",
 ]
 
 [[package]]

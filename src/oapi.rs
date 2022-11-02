@@ -8,11 +8,13 @@ use rand::{thread_rng, Rng};
 use rand::rngs::ThreadRng;
 use http::status::StatusCode;
 use chrono::{DateTime, Utc};
+use regex::Regex;
+use lazy_static::lazy_static;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::Error::ResponseError;
-use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry, Image, ReadImagesRequest, FiltersImage, ReadImagesResponse, Account, ReadAccountsResponse, ReadAccountsRequest, ReadSubnetsResponse, ReadSubregionsRequest, ReadSubregionsResponse};
-use outscale_api::apis::vm_api::read_vms;
+use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry, Image, ReadImagesRequest, FiltersImage, ReadImagesResponse, Account, ReadAccountsResponse, ReadAccountsRequest, ReadSubregionsRequest, ReadSubregionsResponse, VmType, ReadVmTypesRequest, ReadVmTypesResponse};
+use outscale_api::apis::vm_api::{read_vms, read_vm_types};
 use outscale_api::apis::catalog_api::read_catalog;
 use outscale_api::apis::account_api::read_accounts;
 use outscale_api::apis::image_api::read_images;
@@ -28,6 +30,7 @@ type VmId = String;
 // This string correspond to pure internal forged identifier of a catalog entry.
 // format!("{}:{}", entry.service, entry.type);
 type CatalogId = String;
+type VmTypeName = String;
 
 pub struct Input {
     config: Configuration,
@@ -35,6 +38,8 @@ pub struct Input {
     pub vms: HashMap::<VmId, Vm>,
     pub vms_images: HashMap<ImageId, Image>,
     pub catalog: HashMap<CatalogId, CatalogEntry>,
+    pub need_vm_types_fetch: bool,
+    pub vm_types: HashMap<String, VmType>,
     pub account: Option<Account>,
     pub region: Option<String>,
     pub fetch_date: Option<DateTime<Utc>>,
@@ -49,6 +54,8 @@ impl Input {
             vms: HashMap::<VmId, Vm>::new(),
             vms_images: HashMap::<ImageId, Image>::new(),
             catalog: HashMap::<CatalogId, CatalogEntry>::new(),
+            need_vm_types_fetch: false,
+            vm_types: HashMap::<VmTypeName, VmType>::new(),
             account: None,
             region: None,
             fetch_date: None,
@@ -60,6 +67,9 @@ impl Input {
         self.fetch_vms()?;
         self.fetch_vms_images()?;
         self.fetch_catalog()?;
+        if self.need_vm_types_fetch {
+            self.fetch_vm_types()?;
+        }
         self.fetch_account()?;
         self.fetch_region()?;
         Ok(())
@@ -95,6 +105,11 @@ impl Input {
                     continue;
                 }
             };
+            if let Some(vm_type) = &vm.vm_type {
+                if !self.need_vm_types_fetch && !vm_type.starts_with("tina") {
+                    self.need_vm_types_fetch = true;
+                }
+            }
             self.vms.insert(vm_id.clone(), vm);
         }
 
@@ -202,6 +217,45 @@ impl Input {
         }
         return Ok(())
     }
+
+    fn fetch_vm_types(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let request = ReadVmTypesRequest::new();
+        let result: ReadVmTypesResponse = loop {
+            let response = read_vm_types(&self.config, Some(request.clone()));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+        let vm_types = match result.vm_types {
+            None => {
+                if debug() {
+                    eprintln!("warning: no vm type list provided");
+                }
+                return Ok(());
+            },
+            Some(vm_types) => vm_types,
+        };
+        for vm_type in vm_types {
+            let vm_type_name = match &vm_type.vm_type_name {
+                Some(name) => name.clone(),
+                None => {
+                    if debug() {
+                        eprintln!("warning: vm type has no name");
+                    }
+                    continue;
+                }
+            };
+            self.vm_types.insert(vm_type_name, vm_type);
+        }
+
+        if debug() {
+            eprintln!("info: fetched {} vm types", self.vm_types.len());
+        }
+        return Ok(())
+    }
+
 
     fn fetch_account(&mut self) -> Result<(), Box<dyn error::Error>> {
         let result: ReadAccountsResponse = loop {
@@ -313,70 +367,12 @@ impl Input {
         }
     }
 
-    fn vm_cpu_catalog_entry(&self, vm: &Vm) -> Option<CatalogEntry> {
-        let vm_type = match &vm.vm_type {
-            Some(vm_type) => vm_type,
-            None => {
-                if debug() {
-                    eprintln!("warning: cannot get vm type in vm details");
-                }
-                return None;
-            }
-        };
-        let id = match vm_type.starts_with("tina") {
-            true => {
-                // format: tinav5.c2r4p1
-                //         0123456789012
-                let gen = match vm_type.chars().nth(5) {
-                    Some(c) => c,
-                    None => {
-                        if debug() {
-                            eprintln!("warning: cannot parse generation for tina type {}", vm_type);
-                        }
-                        return None;
-                    },
-                };
-                let perf = match vm_type.chars().nth(12) {
-                    Some(c) => c,
-                    None => {
-                        if debug() {
-                            eprintln!("warning: cannot parse performance for tina type {}", vm_type);
-                        }
-                        return None;
-                    },
-                };
-                format!("TinaOS-FCU:CustomCore:v{}-p{}", gen, perf)
-            },
-            false => format!("TinaOS-FCU:BoxUsage:{}", vm_type),
-        };
-        match self.catalog.get(&id) {
-            Some(entry) => Some(entry.clone()),
-            None => {
-                if debug() {
-                    eprintln!("warning: cannot find cpu catalog entry for {}", vm_type);
-                }
-                None
-            }
-        }
-    }
-    
-    fn vm_price_vcpu_per_hour(&self, vm: &Vm) -> f32 {
-        match self.vm_cpu_catalog_entry(vm) {
-            Some(entry) => match entry.unit_price {
-                Some(price) => return price,
-                None => {
-                    if debug() {
-                        eprintln!("warning: entry price is not defined");
-                    }
-                    0.0
-                },
-            },
-            None => 0.0
-        }
-    }
-
     fn fill_resource_vm(&self, resources: &mut Resources) {
         for (vm_id, vm) in &self.vms {
+            let specs = match VmSpecs::new(&vm, &self) {
+                Some(s) => s,
+                None => continue,
+            };
             let core_vm = core::Vm {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
@@ -388,18 +384,209 @@ impl Input {
                 price_per_hour: None,
                 price_per_month: None,
                 vm_type: vm.vm_type.clone(),
-                vm_vcpu_gen: None,
+                vm_vcpu_gen: Some(specs.generation.clone()),
                 vm_core_performance: vm.performance.clone(),
                 vm_image: vm.image_id.clone(),
                 vm_product_id: None,
-                vm_vcpu: 0,
-                vm_ram_gb: 0,
-                price_vcpu_per_hour: self.vm_price_vcpu_per_hour(&vm),
-                price_ram_gb_per_hour: 0_f32,
+                vm_vcpu: specs.vcpu,
+                vm_ram_gb: specs.ram_gb,
+                price_vcpu_per_hour: specs.price_vcpu_per_hour,
+                price_box_per_hour: specs.price_box_per_hour,
+                price_ram_gb_per_hour: specs.price_ram_gb_per_hour,
                 price_product_per_cpu_per_hour: 0_f32,
             };
             resources.vms.push(core_vm);
         }
+    }
+}
+
+struct VmSpecs {
+    vm_type: String,
+    generation: String,
+    vcpu: usize,
+    ram_gb: usize,
+    performance: String,
+    price_vcpu_per_hour: f32,
+    price_ram_gb_per_hour: f32,
+    price_box_per_hour: f32,
+}
+
+impl VmSpecs {
+    fn new(vm: &Vm, input: &Input) -> Option<Self> {
+        let vm_type = match &vm.vm_type {
+            Some(vm_type) => vm_type,
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot get vm type in vm details");
+                }
+                return None;
+            }
+        };
+        let out = VmSpecs {
+            vm_type: vm_type.clone(),
+            generation: String::from(""),
+            vcpu: 0,
+            ram_gb: 0,
+            performance: String::from(""),
+            price_vcpu_per_hour: 0_f32,
+            price_ram_gb_per_hour: 0_f32,
+            price_box_per_hour: 0_f32,
+        };
+        match vm_type.starts_with("tina") {
+            true => out.parse_tina_type()?.parse_tina_prices(&input),
+            false => out.parse_box_type(&input)?.parse_box_prices(&input),
+        }
+    }
+
+    fn parse_tina_type(mut self) -> Option<VmSpecs> {
+        // format: tinav5.c20r40p1
+        //              ^  ^^ ^^ ^
+        //              |  || || +-- vcpu performance
+        //              |  || ++-- ram quantity
+        //              |  ++-- number of vcores
+        //              +-- generation
+        lazy_static! {
+            static ref REG: Regex = Regex::new(r"^tinav(\d+)\.c(\d+)r(\d+)p(\d+)$").unwrap();
+        }
+        let cap = REG.captures_iter(&self.vm_type).next()?;
+        self.generation = String::from(&cap[1]);
+        self.vcpu = usize::from_str_radix(&cap[2], 10).ok()?;
+        self.ram_gb = usize::from_str_radix(&cap[3], 10).ok()?;
+        self.performance = String::from(&cap[4]);
+        Some(self)
+    }
+
+    fn parse_tina_prices(mut self, input: &Input) -> Option<VmSpecs> {
+        let entry_id = format!("TinaOS-FCU:CustomCore:v{}-p{}", self.generation, self.performance);
+        self.price_vcpu_per_hour = match input.catalog.get(&entry_id) {
+            Some(entry) => match entry.unit_price {
+                Some(price) => price,
+                None => {
+                    if debug() {
+                        eprintln!("warning: cpu price is not defined for VM type tina {}", self.vm_type);
+                    }
+                    return None;
+                },
+            },
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot find cpu catalog entry for VM type tina {}", self.vm_type);
+                }
+                return None;
+            },
+        };
+
+        let entry_id = format!("TinaOS-FCU:CustomRam");
+        self.price_ram_gb_per_hour = match input.catalog.get(&entry_id) {
+            Some(entry) => match entry.unit_price {
+                Some(price) => price,
+                None => {
+                    if debug() {
+                        eprintln!("warning: ram price is not defined for VM type tina {}", self.vm_type);
+                    }
+                    return None;
+                },
+            },
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot find ram catalog entry for VM type tina {}", self.vm_type);
+                }
+                return None;
+            },
+        };
+        Some(self)
+    }
+
+    fn parse_box_type(mut self, input: &Input) -> Option<VmSpecs> {
+        let vm_type = input.vm_types.get(&self.vm_type)?;
+        self.vcpu = vm_type.vcore_count? as usize;
+        self.ram_gb = vm_type.memory_size? as usize;
+        // We don't have this information through API for now but we have it on public documentation:
+        // https://docs.outscale.com/en/userguide/Instance-Types.html
+        // format: m4.4xlarge
+        //         ^^-- vm family
+        lazy_static! {
+            static ref REG: Regex = Regex::new(r"^([a-z]+\d+)\..*$").unwrap();
+        }
+        let cap = match REG.captures_iter(&self.vm_type).next() {
+            Some(cap) => cap,
+            // family and generation is not mandatory to extract price.
+            None => {
+                if debug() {
+                    eprintln!("warning: annot extract vm family from {}", self.vm_type);
+                }
+                return Some(self);
+            }
+        };
+        let family = String::from(&cap[1]);
+        let (generation, performance) = match family.as_str() {
+            "c1" => ("1", "1"),
+            "c3" => ("3", "1"),
+            "c4" => ("4", "1"),
+            "c5" => ("5", "1"),
+            "cc1" => ("1", "1"),
+            "cc2" => ("2", "2"),
+            "cr1" => ("1", "2"),
+            "g2" => ("2", "1"),
+            "g3" => ("3", "1"),
+            "hi1" => ("3", "1"),
+            "i2" => ("4", "2"),
+            "io5" => ("4", "2"),
+            "m1" => ("1", "2"),
+            "m2" => ("2", "2"),
+            "m3" => ("3", "2"),
+            "m4" => ("4", "2"),
+            "m5" => ("5", "2"),
+            "mv3" => ("4", "2"),
+            "nv1" => ("4", "2"),
+            "nv2" => ("4", "2"),
+            "oc1" => ("1", "1"),
+            "oc2" => ("2", "1"),
+            "oc5" => ("4", "1"),
+            "og3" => ("4", "2"),
+            "og4" => ("4", "1"),
+            "om5" => ("4", "2"),
+            "os1" => ("1", "2"),
+            "os3" => ("3", "2"),
+            "p100" => ("5", "1"),
+            "p3" => ("5", "1"),
+            "p6" => ("5", "1"),
+            "r3" => ("3", "2"),
+            "r4" => ("4", "2"),
+            "t1" => ("1", "3"),
+            "t2" => ("2", "3"),
+            unknown_family => {
+                if debug() {
+                    eprintln!("warning: unkown family name for {}", unknown_family)
+                }
+                ("", "")
+            },
+        };
+        self.generation = String::from(generation);
+        self.performance = String::from(performance);
+        Some(self)
+    }
+
+    fn parse_box_prices(mut self, input: &Input) -> Option<VmSpecs> {
+        let entry_id = format!("TinaOS-FCU:BoxUsage:{}", self.vm_type);
+        self.price_box_per_hour = match input.catalog.get(&entry_id) {
+            Some(entry) => match entry.unit_price {
+                Some(price) => price,
+                None => {
+                    if debug() {
+                        eprintln!("warning: cpu price is not defined for VM type BoxUsage {}", self.vm_type);
+                    }
+                    return None;
+                },
+            },
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot find cpu catalog entry for VM type BoxUsage {}", self.vm_type);
+                }
+                return None;
+            },
+        };
+        Some(self)
     }
 }
 
