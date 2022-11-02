@@ -40,11 +40,6 @@ trait Resource {
     fn compute(&mut self) -> Result<(), ResourceError>;
 }
 
-pub enum Currency {
-    Euro,
-    Dollar,
-}
-
 pub struct Vm {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
@@ -52,7 +47,6 @@ pub struct Vm {
     pub read_date_rfc3339: Option<String>,
     pub region: Option<String>,
     pub resource_id: Option<String>,
-    pub currency: Option<Currency>,
     pub price_per_hour: Option<f32>,
     pub price_per_month: Option<f32>,
     pub vm_type: Option<String>,

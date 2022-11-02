@@ -380,7 +380,6 @@ impl Input {
                 read_date_rfc3339: self.fetch_date_rfc3339(),
                 region: self.region.clone(),
                 resource_id: Some(vm_id.clone()),
-                currency: None,
                 price_per_hour: None,
                 price_per_month: None,
                 vm_type: vm.vm_type.clone(),
