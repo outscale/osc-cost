@@ -21,6 +21,10 @@ impl Resources {
         }
         return Ok(total);
     }
+
+    pub fn cost_per_month(&self) -> Result<f32, ResourceError> {
+        Ok(self.cost_per_hour()? * HOURS_PER_MONTH)
+    }
 }
 
 pub enum ResourceError {

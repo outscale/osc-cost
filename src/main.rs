@@ -21,25 +21,41 @@ fn main() {
         }
     };
     if let Err(error) = oapi_input.fetch() {
-        eprintln!("error while fetching ressources: {:?}", error);
+        eprintln!("error: cannot fetch ressources: {:?}", error);
     }
     let mut resources = core::Resources::from(oapi_input);
     if debug() {
         eprintln!("info: generated resources has {} vms", resources.vms.len());
     }
     if let Err(error) = resources.compute() {
-        eprintln!("Cannot compute ressource costs: {}", error);
+        eprintln!("error: cannot compute ressource costs: {}", error);
         exit(1);
     }
 
-    let cost_per_hour = match resources.cost_per_hour() {
-        Ok(cost) => cost,
-        Err(error) => {
-            eprintln!("Cannot compute cost per ressource costs: {}", error);
+    match args.format.as_str() {
+        "hour" => {
+            match resources.cost_per_hour() {
+                Ok(cost) => println!("{}", cost),
+                Err(error) => {
+                    eprintln!("error: cannot compute cost per ressource costs: {}", error);
+                    exit(1);
+                }
+            }
+        },
+        "month" => {
+            match resources.cost_per_month() {
+                Ok(cost) => println!("{}", cost),
+                Err(error) => {
+                    eprintln!("error: annot compute cost per ressource costs: {}", error);
+                    exit(1);
+                }
+            }
+        },
+        unknown_format => {
+            eprintln!("error: unkown format {}", unknown_format);
             exit(1);
         }
     };
-    println!("{}", cost_per_hour);
 }
 
 #[derive(Parser, Debug)]
@@ -50,6 +66,8 @@ struct Args {
    profile: String,
    #[arg(long, default_value_t = false)]
    debug: bool,
+   #[arg(long, default_value_t = String::from("hour"))]
+   format: String,
 }
 
 static DEBUG: AtomicBool = AtomicBool::new(false);
