@@ -79,7 +79,6 @@ pub struct Vm {
     pub vm_vcpu_gen: Option<String>,
     pub vm_core_performance: Option<String>,
     pub vm_image: Option<String>,
-    pub vm_product_id: Option<String>,
     // Mandatory to compute price for tina types
     pub vm_vcpu: usize,
     pub vm_ram_gb: usize,
