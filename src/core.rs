@@ -79,7 +79,6 @@ pub struct Vm {
     pub vm_vcpu_gen: Option<String>,
     pub vm_core_performance: Option<String>,
     pub vm_image: Option<String>,
-    pub vm_product_id: Option<String>,
     // Mandatory to compute price for tina types
     pub vm_vcpu: usize,
     pub vm_ram_gb: usize,
@@ -88,7 +87,9 @@ pub struct Vm {
     // Mandatory to compute price for BoxUsage (aws-type, etc) types
     pub price_box_per_hour: f32,
     // Mandatory to compute price for all vm types
+    pub price_product_per_ram_gb_per_hour: f32,
     pub price_product_per_cpu_per_hour: f32,
+    pub price_product_per_vm_per_hour: f32,
 }
 
 impl Resource for Vm {
@@ -97,6 +98,8 @@ impl Resource for Vm {
         price_per_hour += self.vm_vcpu as f32 * self.price_vcpu_per_hour;
         price_per_hour += self.vm_ram_gb as f32 * self.price_ram_gb_per_hour;
         price_per_hour += self.vm_vcpu as f32 * self.price_product_per_cpu_per_hour;
+        price_per_hour += self.vm_ram_gb as f32 * self.price_product_per_ram_gb_per_hour;
+        price_per_hour += self.price_product_per_vm_per_hour;
         price_per_hour += self.price_box_per_hour;
         self.price_per_hour = Some(price_per_hour);
         self.price_per_month = Some(price_per_hour * HOURS_PER_MONTH);

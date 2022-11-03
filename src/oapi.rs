@@ -28,7 +28,7 @@ static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 type ImageId = String;
 type VmId = String;
 // This string correspond to pure internal forged identifier of a catalog entry.
-// format!("{}:{}", entry.service, entry.type);
+// format!("{}/{}/{}", entry.service, entry.type, entry.operation);
 type CatalogId = String;
 type VmTypeName = String;
 
@@ -220,8 +220,17 @@ impl Input {
                     continue;
                 }
             };
-            let id = format!("{}:{}", service, _type);
-            self.catalog.insert(id, entry);
+            let operation = match &entry.operation {
+                Some(t) => t.clone(),
+                None => {
+                    if debug() {
+                        eprintln!("warning: catalog entry as no operation");
+                    }
+                    continue;
+                }
+            };
+            let entry_id = format!("{}/{}/{}", service, _type, operation);
+            self.catalog.insert(entry_id, entry);
         }
 
         if debug() {
@@ -398,13 +407,16 @@ impl Input {
                 vm_vcpu_gen: Some(specs.generation.clone()),
                 vm_core_performance: vm.performance.clone(),
                 vm_image: vm.image_id.clone(),
-                vm_product_id: None,
                 vm_vcpu: specs.vcpu,
                 vm_ram_gb: specs.ram_gb,
                 price_vcpu_per_hour: specs.price_vcpu_per_hour,
-                price_box_per_hour: specs.price_box_per_hour,
                 price_ram_gb_per_hour: specs.price_ram_gb_per_hour,
-                price_product_per_cpu_per_hour: 0_f32,
+                // Mandatory to compute price for BoxUsage (aws-type, etc) types
+                price_box_per_hour: specs.price_box_per_hour,
+                // Mandatory to compute price for all vm types
+                price_product_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
+                price_product_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
+                price_product_per_vm_per_hour: specs.price_product_per_vm_per_hour,
             };
             resources.vms.push(core_vm);
         }
@@ -417,9 +429,13 @@ struct VmSpecs {
     vcpu: usize,
     ram_gb: usize,
     performance: String,
+    product_codes: Vec<String>,
     price_vcpu_per_hour: f32,
     price_ram_gb_per_hour: f32,
     price_box_per_hour: f32,
+    price_product_per_ram_gb_per_hour: f32,
+    price_product_per_cpu_per_hour: f32,
+    price_product_per_vm_per_hour: f32,
 }
 
 impl VmSpecs {
@@ -439,13 +455,17 @@ impl VmSpecs {
             vcpu: 0,
             ram_gb: 0,
             performance: String::from(""),
+            product_codes: vm.product_codes.clone().unwrap_or(Vec::new()),
             price_vcpu_per_hour: 0_f32,
             price_ram_gb_per_hour: 0_f32,
             price_box_per_hour: 0_f32,
+            price_product_per_ram_gb_per_hour: 0_f32,
+            price_product_per_cpu_per_hour: 0_f32,
+            price_product_per_vm_per_hour: 0_f32,
         };
         match vm_type.starts_with("tina") {
-            true => out.parse_tina_type()?.parse_tina_prices(&input),
-            false => out.parse_box_type(&input)?.parse_box_prices(&input),
+            true => out.parse_tina_type()?.parse_product_price(&input)?.parse_tina_prices(&input),
+            false => out.parse_box_type(&input)?.parse_product_price(&input)?.parse_box_prices(&input),
         }
     }
 
@@ -467,8 +487,68 @@ impl VmSpecs {
         Some(self)
     }
 
+    fn parse_product_price(mut self, input: &Input) -> Option<VmSpecs> {
+        for product_code in &self.product_codes {
+            let entry_id = format!("TinaOS-FCU/ProductUsage/RunInstances-{}-OD", product_code);
+            let price = match input.catalog.get(&entry_id) {
+                Some(entry) => match entry.unit_price {
+                    Some(price) => price,
+                    None => {
+                        if debug() {
+                            eprintln!("warning: product price is not defined for product code {}", product_code);
+                        }
+                        continue;
+                    },
+                },
+                None => {
+                    if debug() {
+                        eprintln!("warning: cannot find product code {}", product_code);
+                    }
+                    continue;
+                },
+            };
+            // License calculation is specific to each product code.
+            // https://en.outscale.com/pricing/#licenses
+            let cores = self.vcpu as f32;
+            match product_code.as_str() {
+                // Generic Linux vm, should be free
+                "0001" => {},
+                // Microsoft Windows Server 2019 License
+                // Price by 2 cores
+                "0002" => {
+                    let cores_to_pay = ((cores + 1.0) / 2.0).floor();
+                    let price_for_vm = cores_to_pay * price;
+                    // set back price per cpu per hour
+                    self.price_product_per_cpu_per_hour += price_for_vm / cores;
+                },
+                // mapr license (0003)
+                // Oracle Linux OS Distribution (0004)
+                // Microsoft Windows 10 E3 VDA License (0005)
+                // Red Hat Enterprise Linux OS Distribution (0006)
+                // sql server web (0007)
+                "0003" | "0004" | "0005" | "0006" | "0007" => self.price_product_per_vm_per_hour += price,
+                // Microsoft Windows SQL Server 2019 Standard Edition (0008)
+                // Microsoft Windows SQL Server 2019 Enterprise Edition (0009)
+                // Price by 2 cores (4 cores min)
+                "0008" | "0009" => {
+                    let cores_to_pay = ((cores + 1.0) / 2.0).floor().max(4.0);
+                    let price_for_vm = cores_to_pay * price;
+                    // set back price per cpu per hour
+                    self.price_product_per_cpu_per_hour += price_for_vm / cores;
+                },
+                _ => {
+                    if debug() {
+                        eprintln!("warning: product code {} is not managed", product_code);
+                    }
+                    continue
+                }
+            };
+        }
+        Some(self)
+    }
+
     fn parse_tina_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        let entry_id = format!("TinaOS-FCU:CustomCore:v{}-p{}", self.generation, self.performance);
+        let entry_id = format!("TinaOS-FCU/CustomCore:v{}-p{}/RunInstances-OD", self.generation, self.performance);
         self.price_vcpu_per_hour = match input.catalog.get(&entry_id) {
             Some(entry) => match entry.unit_price {
                 Some(price) => price,
@@ -487,7 +567,7 @@ impl VmSpecs {
             },
         };
 
-        let entry_id = format!("TinaOS-FCU:CustomRam");
+        let entry_id = format!("TinaOS-FCU/CustomRam/RunInstances-OD");
         self.price_ram_gb_per_hour = match input.catalog.get(&entry_id) {
             Some(entry) => match entry.unit_price {
                 Some(price) => price,
@@ -579,7 +659,7 @@ impl VmSpecs {
     }
 
     fn parse_box_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        let entry_id = format!("TinaOS-FCU:BoxUsage:{}", self.vm_type);
+        let entry_id = format!("TinaOS-FCU/BoxUsage:{}/RunInstances-OD", self.vm_type);
         self.price_box_per_hour = match input.catalog.get(&entry_id) {
             Some(entry) => match entry.unit_price {
                 Some(price) => price,
