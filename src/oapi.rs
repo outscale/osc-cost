@@ -451,11 +451,11 @@ impl VmSpecs {
 
     fn parse_tina_type(mut self) -> Option<VmSpecs> {
         // format: tinav5.c20r40p1
-        //              ^  ^^ ^^ ^
-        //              |  || || +-- vcpu performance
-        //              |  || ++-- ram quantity
-        //              |  ++-- number of vcores
-        //              +-- generation
+        //              │  ││ ││ │
+        //              │  ││ ││ └── vcpu performance
+        //              │  ││ └┴── ram quantity
+        //              │  └┴── number of vcores
+        //              └── generation
         lazy_static! {
             static ref REG: Regex = Regex::new(r"^tinav(\d+)\.c(\d+)r(\d+)p(\d+)$").unwrap();
         }
@@ -515,7 +515,7 @@ impl VmSpecs {
         // We don't have this information through API for now but we have it on public documentation:
         // https://docs.outscale.com/en/userguide/Instance-Types.html
         // format: m4.4xlarge
-        //         ^^-- vm family
+        //         └┴── vm family
         lazy_static! {
             static ref REG: Regex = Regex::new(r"^([a-z]+\d+)\..*$").unwrap();
         }
