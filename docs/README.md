@@ -2,7 +2,15 @@ osc-cost allow Outscale users to estimate their cloud costs.
 
 # Features
 
-WIP :)
+- Data sources:
+  - [Outscale API](https://docs.outscale.com/api)
+- Supported resources:
+  - Virtual Machines (tina types, aws-compatible types, licenses)
+- Output formats:
+  - Current cost per hour
+  - Current cost per month
+  - Json (line-delimited JSON document)
+  - CSV
 
 # Installation
 
