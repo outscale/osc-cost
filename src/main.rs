@@ -1,9 +1,9 @@
-use std::process::exit;
 use clap::Parser;
+use std::process::exit;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-mod oapi;
 mod core;
+mod oapi;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -33,40 +33,32 @@ fn main() {
     }
 
     match args.format.as_str() {
-        "hour" => {
-            match resources.cost_per_hour() {
-                Ok(cost) => println!("{}", cost),
-                Err(error) => {
-                    eprintln!("error: {}", error);
-                    exit(1);
-                }
+        "hour" => match resources.cost_per_hour() {
+            Ok(cost) => println!("{}", cost),
+            Err(error) => {
+                eprintln!("error: {}", error);
+                exit(1);
             }
         },
-        "month" => {
-            match resources.cost_per_month() {
-                Ok(cost) => println!("{}", cost),
-                Err(error) => {
-                    eprintln!("error: {}", error);
-                    exit(1);
-                }
+        "month" => match resources.cost_per_month() {
+            Ok(cost) => println!("{}", cost),
+            Err(error) => {
+                eprintln!("error: {}", error);
+                exit(1);
             }
         },
-        "json" => {
-            match resources.json() {
-                Ok(json_details) => println!("{}", json_details),
-                Err(error) => {
-                    eprintln!("error: {}", error);
-                    exit(1);
-                }
+        "json" => match resources.json() {
+            Ok(json_details) => println!("{}", json_details),
+            Err(error) => {
+                eprintln!("error: {}", error);
+                exit(1);
             }
         },
-        "csv" => {
-            match resources.csv() {
-                Ok(csv_details) => println!("{}", csv_details),
-                Err(error) => {
-                    eprintln!("error: {}", error);
-                    exit(1);
-                }
+        "csv" => match resources.csv() {
+            Ok(csv_details) => println!("{}", csv_details),
+            Err(error) => {
+                eprintln!("error: {}", error);
+                exit(1);
             }
         },
         unknown_format => {
@@ -80,12 +72,12 @@ fn main() {
 #[command(author, version, about, long_about=None)]
 struct Args {
     // Profile name to use in ~/.osc/config.json
-   #[arg(long, short = 'p', default_value_t = String::from("default"))]
-   profile: String,
-   #[arg(long, default_value_t = false)]
-   debug: bool,
-   #[arg(long, default_value_t = String::from("hour"))]
-   format: String,
+    #[arg(long, short = 'p', default_value_t = String::from("default"))]
+    profile: String,
+    #[arg(long, default_value_t = false)]
+    debug: bool,
+    #[arg(long, default_value_t = String::from("hour"))]
+    format: String,
 }
 
 static DEBUG: AtomicBool = AtomicBool::new(false);

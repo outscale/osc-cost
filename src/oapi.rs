@@ -1,26 +1,31 @@
-use std::error;
-use std::thread::sleep;
-use std::time::Duration;
-use std::convert::From;
-use std::collections::HashMap;
-use outscale_api::apis::subregion_api::read_subregions;
-use rand::{thread_rng, Rng};
-use rand::rngs::ThreadRng;
-use http::status::StatusCode;
-use chrono::{DateTime, Utc};
-use regex::Regex;
-use lazy_static::lazy_static;
-use outscale_api::apis::configuration_file::ConfigurationFile;
-use outscale_api::apis::configuration::Configuration;
-use outscale_api::apis::Error::ResponseError;
-use outscale_api::models::{Vm, ReadVmsRequest, ReadVmsResponse, ReadCatalogResponse, ReadCatalogRequest, CatalogEntry, Image, ReadImagesRequest, FiltersImage, ReadImagesResponse, Account, ReadAccountsResponse, ReadAccountsRequest, ReadSubregionsRequest, ReadSubregionsResponse, VmType, ReadVmTypesRequest, ReadVmTypesResponse};
-use outscale_api::apis::vm_api::{read_vms, read_vm_types};
-use outscale_api::apis::catalog_api::read_catalog;
-use outscale_api::apis::account_api::read_accounts;
-use outscale_api::apis::image_api::read_images;
 use crate::core::{self, Resources};
 use crate::debug;
 use crate::VERSION;
+use chrono::{DateTime, Utc};
+use http::status::StatusCode;
+use lazy_static::lazy_static;
+use outscale_api::apis::account_api::read_accounts;
+use outscale_api::apis::catalog_api::read_catalog;
+use outscale_api::apis::configuration::Configuration;
+use outscale_api::apis::configuration_file::ConfigurationFile;
+use outscale_api::apis::image_api::read_images;
+use outscale_api::apis::subregion_api::read_subregions;
+use outscale_api::apis::vm_api::{read_vm_types, read_vms};
+use outscale_api::apis::Error::ResponseError;
+use outscale_api::models::{
+    Account, CatalogEntry, FiltersImage, Image, ReadAccountsRequest, ReadAccountsResponse,
+    ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest, ReadImagesResponse,
+    ReadSubregionsRequest, ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse,
+    ReadVmsRequest, ReadVmsResponse, Vm, VmType,
+};
+use rand::rngs::ThreadRng;
+use rand::{thread_rng, Rng};
+use regex::Regex;
+use std::collections::HashMap;
+use std::convert::From;
+use std::error;
+use std::thread::sleep;
+use std::time::Duration;
 
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
@@ -35,7 +40,7 @@ type VmTypeName = String;
 pub struct Input {
     config: Configuration,
     rng: ThreadRng,
-    pub vms: HashMap::<VmId, Vm>,
+    pub vms: HashMap<VmId, Vm>,
     pub vms_images: HashMap<ImageId, Image>,
     pub catalog: HashMap<CatalogId, CatalogEntry>,
     pub need_vm_types_fetch: bool,
@@ -92,20 +97,20 @@ impl Input {
                     eprintln!("warning: no vm list provided");
                 }
                 return Ok(());
-            },
+            }
             Some(vms) => vms,
         };
         for vm in vms {
             if let Some(state) = &vm.state {
                 match state.as_str() {
-                    "running" | "stopping" | "shutting-down" => {},
+                    "running" | "stopping" | "shutting-down" => {}
                     "pending" | "stopped" | "terminated" | "quarantine" => continue,
                     _ => {
                         if debug() {
                             eprintln!("warning: un-managed vm state {} found", state);
                         }
-                        continue
-                    },
+                        continue;
+                    }
                 };
             }
             let vm_id = match &vm.vm_id {
@@ -128,13 +133,13 @@ impl Input {
         if debug() {
             eprintln!("info: fetched {} vms", self.vms.len());
         }
-        return Ok(())
+        Ok(())
     }
 
     fn fetch_vms_images(&mut self) -> Result<(), Box<dyn error::Error>> {
         // Collect all unique images
         let mut images = Vec::<ImageId>::new();
-        for (vm_id, _vm) in &self.vms {
+        for vm_id in self.vms.keys() {
             images.push(vm_id.clone());
         }
         images.dedup();
@@ -157,18 +162,18 @@ impl Input {
                     eprintln!("warning: no image list provided");
                 }
                 return Ok(());
-            },
+            }
             Some(images) => images,
         };
         for image in images {
-            let image_id = image.image_id.clone().unwrap_or(String::from(""));
+            let image_id = image.image_id.clone().unwrap_or_else(|| String::from(""));
             self.vms_images.insert(image_id, image);
         }
 
         if debug() {
             eprintln!("info: fetched {} images used by vms", self.vms_images.len());
         }
-        return Ok(())
+        Ok(())
     }
 
     fn fetch_catalog(&mut self) -> Result<(), Box<dyn error::Error>> {
@@ -189,7 +194,7 @@ impl Input {
                     eprintln!("warning: no catalog provided");
                 }
                 return Ok(());
-            },
+            }
         };
 
         let catalog = match catalog.entries {
@@ -236,7 +241,7 @@ impl Input {
         if debug() {
             eprintln!("info: fetched {} catalog entries", self.catalog.len());
         }
-        return Ok(())
+        Ok(())
     }
 
     fn fetch_vm_types(&mut self) -> Result<(), Box<dyn error::Error>> {
@@ -255,7 +260,7 @@ impl Input {
                     eprintln!("warning: no vm type list provided");
                 }
                 return Ok(());
-            },
+            }
             Some(vm_types) => vm_types,
         };
         for vm_type in vm_types {
@@ -274,9 +279,8 @@ impl Input {
         if debug() {
             eprintln!("info: fetched {} vm types", self.vm_types.len());
         }
-        return Ok(())
+        Ok(())
     }
-
 
     fn fetch_account(&mut self) -> Result<(), Box<dyn error::Error>> {
         let result: ReadAccountsResponse = loop {
@@ -289,17 +293,16 @@ impl Input {
             break response?;
         };
 
-
         let accounts = match result.accounts {
             None => {
                 if debug() {
                     eprintln!("warning: no account available");
                 }
                 return Ok(());
-            },
+            }
             Some(accounts) => accounts,
         };
-        self.account = match accounts.iter().next() {
+        self.account = match accounts.first() {
             Some(account) => Some(account.clone()),
             None => {
                 if debug() {
@@ -311,7 +314,7 @@ impl Input {
         if debug() {
             eprintln!("info: fetched account details");
         }
-        return Ok(())
+        Ok(())
     }
 
     fn fetch_region(&mut self) -> Result<(), Box<dyn error::Error>> {
@@ -331,10 +334,10 @@ impl Input {
                     eprintln!("warning: no region available");
                 }
                 return Ok(());
-            },
+            }
             Some(subregions) => subregions,
         };
-        self.region = match subregions.iter().next() {
+        self.region = match subregions.first() {
             Some(subregion) => subregion.region_name.clone(),
             None => {
                 if debug() {
@@ -346,11 +349,13 @@ impl Input {
         if debug() {
             eprintln!("info: fetched region details");
         }
-        return Ok(())
+        Ok(())
     }
 
     fn random_wait(&mut self) {
-        let wait_time_ms = self.rng.gen_range(THROTTLING_MIN_WAIT_MS..THROTTLING_MAX_WAIT_MS);
+        let wait_time_ms = self
+            .rng
+            .gen_range(THROTTLING_MIN_WAIT_MS..THROTTLING_MAX_WAIT_MS);
         if debug() {
             eprintln!("info: call throttled, waiting for {}ms", wait_time_ms);
         }
@@ -361,36 +366,25 @@ impl Input {
         match result {
             Ok(_) => false,
             Err(error) => match error {
-                ResponseError(resp) => match resp.status {
-                    StatusCode::SERVICE_UNAVAILABLE => true,
-                    StatusCode::TOO_MANY_REQUESTS => true,
-                    _ => false,
-                },
+                ResponseError(resp) => matches!(
+                    resp.status,
+                    StatusCode::SERVICE_UNAVAILABLE | StatusCode::TOO_MANY_REQUESTS
+                ),
                 _ => false,
-            }
+            },
         }
     }
 
     fn account_id(&self) -> Option<String> {
         match &self.account {
-            Some(account) => match &account.account_id {
-                Some(account_id) => Some(account_id.clone()),
-                None => None,
-            },
-            None => None,
-        }
-    }
-
-    fn fetch_date_rfc3339(&self) -> Option<String> {
-        match self.fetch_date {
-            Some(date) => Some(date.to_rfc3339()),
+            Some(account) => account.account_id.clone(),
             None => None,
         }
     }
 
     fn fill_resource_vm(&self, resources: &mut Resources) {
         for (vm_id, vm) in &self.vms {
-            let specs = match VmSpecs::new(&vm, &self) {
+            let specs = match VmSpecs::new(vm, self) {
                 Some(s) => s,
                 None => continue,
             };
@@ -398,7 +392,7 @@ impl Input {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 resource_type: Some(String::from("vm")),
-                read_date_rfc3339: self.fetch_date_rfc3339(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
                 resource_id: Some(vm_id.clone()),
                 price_per_hour: None,
@@ -455,7 +449,7 @@ impl VmSpecs {
             vcpu: 0,
             ram_gb: 0,
             performance: String::from(""),
-            product_codes: vm.product_codes.clone().unwrap_or(Vec::new()),
+            product_codes: vm.product_codes.clone().unwrap_or_default(),
             price_vcpu_per_hour: 0_f32,
             price_ram_gb_per_hour: 0_f32,
             price_box_per_hour: 0_f32,
@@ -464,8 +458,14 @@ impl VmSpecs {
             price_product_per_vm_per_hour: 0_f32,
         };
         match vm_type.starts_with("tina") {
-            true => out.parse_tina_type()?.parse_product_price(&input)?.parse_tina_prices(&input),
-            false => out.parse_box_type(&input)?.parse_product_price(&input)?.parse_box_prices(&input),
+            true => out
+                .parse_tina_type()?
+                .parse_product_price(input)?
+                .parse_tina_prices(input),
+            false => out
+                .parse_box_type(input)?
+                .parse_product_price(input)?
+                .parse_box_prices(input),
         }
     }
 
@@ -481,8 +481,8 @@ impl VmSpecs {
         }
         let cap = REG.captures_iter(&self.vm_type).next()?;
         self.generation = String::from(&cap[1]);
-        self.vcpu = usize::from_str_radix(&cap[2], 10).ok()?;
-        self.ram_gb = usize::from_str_radix(&cap[3], 10).ok()?;
+        self.vcpu = cap[2].parse::<usize>().ok()?;
+        self.ram_gb = cap[3].parse::<usize>().ok()?;
         self.performance = String::from(&cap[4]);
         Some(self)
     }
@@ -495,24 +495,27 @@ impl VmSpecs {
                     Some(price) => price,
                     None => {
                         if debug() {
-                            eprintln!("warning: product price is not defined for product code {}", product_code);
+                            eprintln!(
+                                "warning: product price is not defined for product code {}",
+                                product_code
+                            );
                         }
                         continue;
-                    },
+                    }
                 },
                 None => {
                     if debug() {
                         eprintln!("warning: cannot find product code {}", product_code);
                     }
                     continue;
-                },
+                }
             };
             // License calculation is specific to each product code.
             // https://en.outscale.com/pricing/#licenses
             let cores = self.vcpu as f32;
             match product_code.as_str() {
                 // Generic Linux vm, should be free
-                "0001" => {},
+                "0001" => {}
                 // Microsoft Windows Server 2019 License
                 // Price by 2 cores
                 "0002" => {
@@ -520,13 +523,15 @@ impl VmSpecs {
                     let price_for_vm = cores_to_pay * price;
                     // set back price per cpu per hour
                     self.price_product_per_cpu_per_hour += price_for_vm / cores;
-                },
+                }
                 // mapr license (0003)
                 // Oracle Linux OS Distribution (0004)
                 // Microsoft Windows 10 E3 VDA License (0005)
                 // Red Hat Enterprise Linux OS Distribution (0006)
                 // sql server web (0007)
-                "0003" | "0004" | "0005" | "0006" | "0007" => self.price_product_per_vm_per_hour += price,
+                "0003" | "0004" | "0005" | "0006" | "0007" => {
+                    self.price_product_per_vm_per_hour += price
+                }
                 // Microsoft Windows SQL Server 2019 Standard Edition (0008)
                 // Microsoft Windows SQL Server 2019 Enterprise Edition (0009)
                 // Price by 2 cores (4 cores min)
@@ -535,12 +540,12 @@ impl VmSpecs {
                     let price_for_vm = cores_to_pay * price;
                     // set back price per cpu per hour
                     self.price_product_per_cpu_per_hour += price_for_vm / cores;
-                },
+                }
                 _ => {
                     if debug() {
                         eprintln!("warning: product code {} is not managed", product_code);
                     }
-                    continue
+                    continue;
                 }
             };
         }
@@ -548,42 +553,57 @@ impl VmSpecs {
     }
 
     fn parse_tina_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        let entry_id = format!("TinaOS-FCU/CustomCore:v{}-p{}/RunInstances-OD", self.generation, self.performance);
+        let entry_id = format!(
+            "TinaOS-FCU/CustomCore:v{}-p{}/RunInstances-OD",
+            self.generation, self.performance
+        );
         self.price_vcpu_per_hour = match input.catalog.get(&entry_id) {
             Some(entry) => match entry.unit_price {
                 Some(price) => price,
                 None => {
                     if debug() {
-                        eprintln!("warning: cpu price is not defined for VM type tina {}", self.vm_type);
+                        eprintln!(
+                            "warning: cpu price is not defined for VM type tina {}",
+                            self.vm_type
+                        );
                     }
                     return None;
-                },
+                }
             },
             None => {
                 if debug() {
-                    eprintln!("warning: cannot find cpu catalog entry for VM type tina {}", self.vm_type);
+                    eprintln!(
+                        "warning: cannot find cpu catalog entry for VM type tina {}",
+                        self.vm_type
+                    );
                 }
                 return None;
-            },
+            }
         };
 
-        let entry_id = format!("TinaOS-FCU/CustomRam/RunInstances-OD");
+        let entry_id = "TinaOS-FCU/CustomRam/RunInstances-OD".to_string();
         self.price_ram_gb_per_hour = match input.catalog.get(&entry_id) {
             Some(entry) => match entry.unit_price {
                 Some(price) => price,
                 None => {
                     if debug() {
-                        eprintln!("warning: ram price is not defined for VM type tina {}", self.vm_type);
+                        eprintln!(
+                            "warning: ram price is not defined for VM type tina {}",
+                            self.vm_type
+                        );
                     }
                     return None;
-                },
+                }
             },
             None => {
                 if debug() {
-                    eprintln!("warning: cannot find ram catalog entry for VM type tina {}", self.vm_type);
+                    eprintln!(
+                        "warning: cannot find ram catalog entry for VM type tina {}",
+                        self.vm_type
+                    );
                 }
                 return None;
-            },
+            }
         };
         Some(self)
     }
@@ -651,7 +671,7 @@ impl VmSpecs {
                     eprintln!("warning: unkown family name for {}", unknown_family)
                 }
                 ("", "")
-            },
+            }
         };
         self.generation = String::from(generation);
         self.performance = String::from(performance);
@@ -665,17 +685,23 @@ impl VmSpecs {
                 Some(price) => price,
                 None => {
                     if debug() {
-                        eprintln!("warning: cpu price is not defined for VM type BoxUsage {}", self.vm_type);
+                        eprintln!(
+                            "warning: cpu price is not defined for VM type BoxUsage {}",
+                            self.vm_type
+                        );
                     }
                     return None;
-                },
+                }
             },
             None => {
                 if debug() {
-                    eprintln!("warning: cannot find cpu catalog entry for VM type BoxUsage {}", self.vm_type);
+                    eprintln!(
+                        "warning: cannot find cpu catalog entry for VM type BoxUsage {}",
+                        self.vm_type
+                    );
                 }
                 return None;
-            },
+            }
         };
         Some(self)
     }
@@ -683,10 +709,8 @@ impl VmSpecs {
 
 impl From<Input> for core::Resources {
     fn from(input: Input) -> Self {
-        let mut resources = core::Resources {
-            vms: Vec::new(),
-        };
+        let mut resources = core::Resources { vms: Vec::new() };
         input.fill_resource_vm(&mut resources);
-        return resources;
+        resources
     }
 }

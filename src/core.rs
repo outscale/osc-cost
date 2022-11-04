@@ -1,8 +1,7 @@
-use std::fmt;
-use std::error;
-use serde::Serialize;
-use serde_json;
 use crate::debug;
+use serde::Serialize;
+use std::error;
+use std::fmt;
 
 static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
 
@@ -23,7 +22,7 @@ impl Resources {
         for vm in &self.vms {
             total += vm.price_per_hour()?
         }
-        return Ok(total);
+        Ok(total)
     }
 
     pub fn cost_per_month(&self) -> Result<f32, ResourceError> {
