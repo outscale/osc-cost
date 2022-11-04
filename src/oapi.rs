@@ -9,6 +9,7 @@ use outscale_api::apis::catalog_api::read_catalog;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::image_api::read_images;
+use outscale_api::apis::public_ip_api::read_public_ips;
 use outscale_api::apis::subregion_api::read_subregions;
 use outscale_api::apis::vm_api::{read_vm_types, read_vms};
 use outscale_api::apis::volume_api::read_volumes;
@@ -17,7 +18,7 @@ use outscale_api::models::{
     Account, CatalogEntry, FiltersImage, Image, ReadAccountsRequest, ReadAccountsResponse,
     ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest, ReadImagesResponse,
     ReadSubregionsRequest, ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse,
-    ReadVmsRequest, ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Vm, VmType, Volume,
+    ReadVmsRequest, ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Vm, VmType, Volume, PublicIp, ReadPublicIpsRequest, ReadPublicIpsResponse
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
@@ -39,6 +40,7 @@ type VolumeId = String;
 // use catalog_entry() to ease process
 type CatalogId = String;
 type VmTypeName = String;
+type PublicIpId = String;
 
 pub struct Input {
     config: Configuration,
@@ -52,6 +54,7 @@ pub struct Input {
     pub region: Option<String>,
     pub volumes: HashMap<VolumeId, Volume>,
     pub fetch_date: Option<DateTime<Utc>>,
+    pub public_ips: HashMap<PublicIpId, PublicIp>,
 }
 
 impl Input {
@@ -72,6 +75,7 @@ impl Input {
             region: None,
             volumes: HashMap::<VolumeId, Volume>::new(),
             fetch_date: None,
+            public_ips: HashMap::new(),
         })
     }
 
@@ -86,6 +90,7 @@ impl Input {
         self.fetch_account()?;
         self.fetch_region()?;
         self.fetch_volumes()?;
+        self.fetch_public_ips()?;
         Ok(())
     }
 
@@ -365,6 +370,7 @@ impl Input {
         let result: ReadVolumesResponse = loop {
             let request = ReadVolumesRequest::new();
             let response = read_volumes(&self.config, Some(request));
+
             if Input::is_throttled(&response) {
                 self.random_wait();
                 continue;
@@ -387,6 +393,44 @@ impl Input {
         }
         if debug() {
             eprintln!("info: fetched {} volumes", self.volumes.len());
+        }
+        Ok(())
+    }
+
+    fn fetch_public_ips(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let request = ReadPublicIpsRequest::new();
+        let result: ReadPublicIpsResponse = loop {
+            let response = read_public_ips(&self.config, Some(request.clone()));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+        let public_ips = match result.public_ips {
+            None => {
+                if debug() {
+                    eprintln!("warning: no public ip list provided");
+                }
+                return Ok(());
+            }
+            Some(ips) => ips,
+        };
+        for public_ip in public_ips {
+            let public_ip_id = match &public_ip.public_ip_id {
+                Some(id) => id.clone(),
+                None => {
+                    if debug() {
+                        eprintln!("warning: public ip has no id");
+                    }
+                    continue;
+                }
+            };
+            self.public_ips.insert(public_ip_id, public_ip);
+        }
+
+        if debug() {
+            eprintln!("info: fetched {} public ips", self.public_ips.len());
         }
         Ok(())
     }
