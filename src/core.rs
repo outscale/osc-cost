@@ -1,4 +1,5 @@
 use std::fmt;
+use std::error;
 use serde::Serialize;
 use serde_json;
 use crate::debug;
@@ -45,6 +46,15 @@ impl Resources {
         }
         out.pop();
         Ok(out)
+    }
+
+    pub fn csv(&self) -> Result<String, Box<dyn error::Error>> {
+        let mut csv_writer = csv::Writer::from_writer(vec![]);
+        for vm in &self.vms {
+            csv_writer.serialize(vm)?;
+        }
+        let output = String::from_utf8(csv_writer.into_inner()?)?;
+        Ok(output)
     }
 }
 

@@ -37,7 +37,7 @@ fn main() {
             match resources.cost_per_hour() {
                 Ok(cost) => println!("{}", cost),
                 Err(error) => {
-                    eprintln!("error: cannot compute cost per ressource costs: {}", error);
+                    eprintln!("error: {}", error);
                     exit(1);
                 }
             }
@@ -46,7 +46,7 @@ fn main() {
             match resources.cost_per_month() {
                 Ok(cost) => println!("{}", cost),
                 Err(error) => {
-                    eprintln!("error: cannot compute cost per ressource costs: {}", error);
+                    eprintln!("error: {}", error);
                     exit(1);
                 }
             }
@@ -55,7 +55,16 @@ fn main() {
             match resources.json() {
                 Ok(json_details) => println!("{}", json_details),
                 Err(error) => {
-                    eprintln!("error: cannot compute cost per ressource costs: {}", error);
+                    eprintln!("error: {}", error);
+                    exit(1);
+                }
+            }
+        },
+        "csv" => {
+            match resources.csv() {
+                Ok(csv_details) => println!("{}", csv_details),
+                Err(error) => {
+                    eprintln!("error: {}", error);
                     exit(1);
                 }
             }
