@@ -47,6 +47,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      - name: Install musl-tools
+        run: sudo apt update -y && sudo apt install musl-tools -y
       - name: Stable Rust with rustfmt
         uses: actions-rs/toolchain@v1
         with:
