@@ -11,12 +11,13 @@ use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::image_api::read_images;
 use outscale_api::apis::subregion_api::read_subregions;
 use outscale_api::apis::vm_api::{read_vm_types, read_vms};
+use outscale_api::apis::volume_api::read_volumes;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{
     Account, CatalogEntry, FiltersImage, Image, ReadAccountsRequest, ReadAccountsResponse,
     ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest, ReadImagesResponse,
     ReadSubregionsRequest, ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse,
-    ReadVmsRequest, ReadVmsResponse, Vm, VmType,
+    ReadVmsRequest, ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Vm, VmType, Volume,
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
@@ -32,6 +33,7 @@ static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
 type ImageId = String;
 type VmId = String;
+type VolumeId = String;
 // This string correspond to pure internal forged identifier of a catalog entry.
 // format!("{}/{}/{}", entry.service, entry.type, entry.operation);
 type CatalogId = String;
@@ -47,6 +49,7 @@ pub struct Input {
     pub vm_types: HashMap<String, VmType>,
     pub account: Option<Account>,
     pub region: Option<String>,
+    pub volumes: HashMap<VolumeId, Volume>,
     pub fetch_date: Option<DateTime<Utc>>,
 }
 
@@ -66,6 +69,7 @@ impl Input {
             vm_types: HashMap::<VmTypeName, VmType>::new(),
             account: None,
             region: None,
+            volumes: HashMap::<VolumeId, Volume>::new(),
             fetch_date: None,
         })
     }
@@ -80,6 +84,7 @@ impl Input {
         }
         self.fetch_account()?;
         self.fetch_region()?;
+        self.fetch_volumes()?;
         Ok(())
     }
 
@@ -355,6 +360,36 @@ impl Input {
         Ok(())
     }
 
+    fn fetch_volumes(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let result: ReadVolumesResponse = loop {
+            let request = ReadVolumesRequest::new();
+            let response = read_volumes(&self.config, Some(request));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+
+        let volumes = match result.volumes {
+            None => {
+                if debug() {
+                    eprintln!("warning: no volume available");
+                }
+                return Ok(());
+            }
+            Some(volumes) => volumes,
+        };
+        for volume in volumes {
+            let volume_id = volume.volume_id.clone().unwrap_or_else(|| String::from(""));
+            self.volumes.insert(volume_id, volume);
+        }
+        if debug() {
+            eprintln!("info: fetched {} volumes", self.volumes.len());
+        }
+        Ok(())
+    }
+
     fn random_wait(&mut self) {
         let wait_time_ms = self
             .rng
@@ -416,6 +451,31 @@ impl Input {
                 price_product_per_vm_per_hour: specs.price_product_per_vm_per_hour,
             };
             resources.vms.push(core_vm);
+        }
+    }
+
+    fn fill_resource_volume(&self, resources: &mut Resources) {
+        for (volume_id, volume) in &self.volumes {
+            let specs = match VolumeSpecs::new(volume, self) {
+                Some(s) => s,
+                None => continue,
+            };
+            let core_volume = core::Volume {
+                osc_cost_version: Some(String::from(VERSION)),
+                account_id: self.account_id(),
+                resource_type: Some(String::from("volume")),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                resource_id: Some(volume_id.clone()),
+                price_per_hour: None,
+                price_per_month: None,
+                volume_type: Some(specs.volume_type.clone()),
+                volume_iops: Some(specs.iops),
+                volume_size: Some(specs.size),
+                price_gb_per_month: specs.price_gb_per_month,
+                price_iops_per_month: specs.price_iops_per_month,
+            };
+            resources.volumes.push(core_volume);
         }
     }
 }
@@ -710,10 +770,125 @@ impl VmSpecs {
     }
 }
 
+struct VolumeSpecs {
+    volume_type: String,
+    size: i32,
+    iops: i32,
+    price_gb_per_month: f32,
+    price_iops_per_month: f32,
+}
+
+impl VolumeSpecs {
+    fn new(volume: &Volume, input: &Input) -> Option<Self> {
+        let volume_type = match &volume.volume_type {
+            Some(volume_type) => volume_type,
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot get volume type in volume details");
+                }
+                return None;
+            }
+        };
+        let iops = match &volume.iops {
+            Some(iops) => iops,
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot get iops in volume details");
+                }
+                &0
+            }
+        };
+
+        let size = match &volume.size {
+            Some(size) => size,
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot get size in volume details");
+                }
+                return None;
+            }
+        };
+        let out = VolumeSpecs {
+            volume_type: volume_type.clone(),
+            iops: (*iops),
+            size: (*size),
+            price_gb_per_month: 0_f32,
+            price_iops_per_month: 0_f32,
+        };
+
+        out.parse_volume_prices(input)
+    }
+
+    fn parse_volume_prices(mut self, input: &Input) -> Option<VolumeSpecs> {
+        let entry_id = format!(
+            "TinaOS-FCU/BSU:VolumeUsage:{}/CreateVolume",
+            self.volume_type
+        );
+        self.price_gb_per_month = match input.catalog.get(&entry_id) {
+            Some(entry) => match entry.unit_price {
+                Some(price) => price,
+                None => {
+                    if debug() {
+                        eprintln!(
+                            "warning: gb price is not defined for volume type {}",
+                            self.volume_type
+                        );
+                    }
+                    return None;
+                }
+            },
+            None => {
+                if debug() {
+                    eprintln!(
+                        "warning: cannot find gb catalog entry for volume type {}",
+                        self.volume_type
+                    );
+                }
+                return None;
+            }
+        };
+
+        if self.volume_type == "io1" {
+            let entry_id = format!(
+                "TinaOS-FCU/BSU:VolumeIOPS:{}/CreateVolume",
+                self.volume_type
+            );
+            self.price_iops_per_month = match input.catalog.get(&entry_id) {
+                Some(entry) => match entry.unit_price {
+                    Some(price) => price,
+                    None => {
+                        if debug() {
+                            eprintln!(
+                                "warning: iops price is not defined for volume type {}",
+                                self.volume_type
+                            );
+                        }
+                        return None;
+                    }
+                },
+                None => {
+                    if debug() {
+                        eprintln!(
+                            "warning: cannot find iops catalog entry for volume type {}",
+                            self.volume_type
+                        );
+                    }
+                    return None;
+                }
+            };
+        }
+        Some(self)
+    }
+}
+
 impl From<Input> for core::Resources {
     fn from(input: Input) -> Self {
-        let mut resources = core::Resources { vms: Vec::new() };
+        let mut resources = core::Resources {
+            vms: Vec::new(),
+            volumes: Vec::new(),
+        };
         input.fill_resource_vm(&mut resources);
+        input.fill_resource_volume(&mut resources);
         resources
     }
 }
