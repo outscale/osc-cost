@@ -53,8 +53,11 @@ pub struct Input {
 impl Input {
     pub fn new(profile_name: String) -> Result<Input, Box<dyn error::Error>> {
         let config_file = ConfigurationFile::load_default()?;
+        let mut config = config_file.configuration(profile_name)?;
+        config.user_agent = Some(format!("osc-cost/{VERSION}"));
+
         Ok(Input {
-            config: config_file.configuration(profile_name)?,
+            config,
             rng: thread_rng(),
             vms: HashMap::<VmId, Vm>::new(),
             vms_images: HashMap::<ImageId, Image>::new(),
