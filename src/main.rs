@@ -1,4 +1,8 @@
 use clap::Parser;
+use std::error;
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::Path;
 use std::process::exit;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -32,30 +36,31 @@ fn main() {
         exit(1);
     }
 
+    let output: String;
     match args.format.as_str() {
         "hour" => match resources.cost_per_hour() {
-            Ok(cost) => println!("{}", cost),
+            Ok(cost) => output = format!("{}", cost),
             Err(error) => {
                 eprintln!("error: {}", error);
                 exit(1);
             }
         },
         "month" => match resources.cost_per_month() {
-            Ok(cost) => println!("{}", cost),
+            Ok(cost) => output = format!("{}", cost),
             Err(error) => {
                 eprintln!("error: {}", error);
                 exit(1);
             }
         },
         "json" => match resources.json() {
-            Ok(json_details) => println!("{}", json_details),
+            Ok(json_details) => output = json_details,
             Err(error) => {
                 eprintln!("error: {}", error);
                 exit(1);
             }
         },
         "csv" => match resources.csv() {
-            Ok(csv_details) => println!("{}", csv_details),
+            Ok(csv_details) => output = csv_details,
             Err(error) => {
                 eprintln!("error: {}", error);
                 exit(1);
@@ -66,6 +71,14 @@ fn main() {
             exit(1);
         }
     };
+
+    if let Some(output_file) = args.output.as_deref() {
+        write_to_file(output_file, output).unwrap_or_else(|error| {
+            panic!("Problem writing output to the file: {:?}", error);
+        });
+    } else {
+        println!("{}", output);
+    }
 }
 
 #[derive(Parser, Debug)]
@@ -78,6 +91,8 @@ struct Args {
     debug: bool,
     #[arg(long, default_value_t = String::from("hour"))]
     format: String,
+    #[arg(long, short = 'o')]
+    output: Option<String>,
 }
 
 static DEBUG: AtomicBool = AtomicBool::new(false);
@@ -89,4 +104,15 @@ fn set_debug_on() {
 
 fn debug() -> bool {
     DEBUG.load(Ordering::SeqCst)
+}
+
+fn write_to_file(file_path: &str, data: String) -> Result<(), Box<dyn error::Error>> {
+    let path = Path::new(file_path);
+    let parent = path.parent().unwrap();
+
+    fs::create_dir_all(parent).unwrap();
+    let mut file = File::create(file_path)?;
+    file.write_all(data.as_bytes()).unwrap();
+
+    Ok(())
 }
