@@ -26,6 +26,10 @@ fn main() {
     let mut resources = core::Resources::from(oapi_input);
     if debug() {
         eprintln!("info: generated resources has {} vms", resources.vms.len());
+        eprintln!(
+            "info: generated resources has {} volumes",
+            resources.volumes.len()
+        );
     }
     if let Err(error) = resources.compute() {
         eprintln!("error: cannot compute ressource costs: {}", error);
