@@ -10,16 +10,18 @@ use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::image_api::read_images;
 use outscale_api::apis::public_ip_api::read_public_ips;
+use outscale_api::apis::snapshot_api::read_snapshots;
 use outscale_api::apis::subregion_api::read_subregions;
 use outscale_api::apis::vm_api::{read_vm_types, read_vms};
 use outscale_api::apis::volume_api::read_volumes;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{
-    Account, CatalogEntry, FiltersImage, Image, PublicIp, ReadAccountsRequest,
+    Account, CatalogEntry, FiltersImage, FiltersSnapshot, Image, PublicIp, ReadAccountsRequest,
     ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest,
-    ReadImagesResponse, ReadPublicIpsRequest, ReadPublicIpsResponse, ReadSubregionsRequest,
-    ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse, ReadVmsRequest,
-    ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Vm, VmType, Volume,
+    ReadImagesResponse, ReadPublicIpsRequest, ReadPublicIpsResponse, ReadSnapshotsRequest,
+    ReadSnapshotsResponse, ReadSubregionsRequest, ReadSubregionsResponse, ReadVmTypesRequest,
+    ReadVmTypesResponse, ReadVmsRequest, ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse,
+    Snapshot, Vm, VmType, Volume,
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
@@ -36,6 +38,7 @@ static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 type ImageId = String;
 type VmId = String;
 type VolumeId = String;
+type SnapshotId = String;
 // This string correspond to pure internal forged identifier of a catalog entry.
 // format!("{}/{}/{}", entry.service, entry.type, entry.operation);
 // use catalog_entry() to ease process
@@ -54,6 +57,7 @@ pub struct Input {
     pub account: Option<Account>,
     pub region: Option<String>,
     pub volumes: HashMap<VolumeId, Volume>,
+    pub snapshots: HashMap<SnapshotId, Snapshot>,
     pub fetch_date: Option<DateTime<Utc>>,
     pub public_ips: HashMap<PublicIpId, PublicIp>,
 }
@@ -75,6 +79,7 @@ impl Input {
             account: None,
             region: None,
             volumes: HashMap::<VolumeId, Volume>::new(),
+            snapshots: HashMap::<SnapshotId, Snapshot>::new(),
             fetch_date: None,
             public_ips: HashMap::new(),
         })
@@ -92,6 +97,7 @@ impl Input {
         self.fetch_region()?;
         self.fetch_volumes()?;
         self.fetch_public_ips()?;
+        self.fetch_snapshots()?;
         Ok(())
     }
 
@@ -382,6 +388,47 @@ impl Input {
         Ok(())
     }
 
+    fn fetch_snapshots(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let account_id = match self.account_id() {
+            None => {
+                warn!("warning: no account_id available... skipping");
+                return Ok(());
+            }
+            Some(account_id) => account_id,
+        };
+        let result: ReadSnapshotsResponse = loop {
+            let mut filter_snapshopts = FiltersSnapshot::new();
+            filter_snapshopts.account_ids = Some(vec![account_id.clone()]);
+
+            let mut request = ReadSnapshotsRequest::new();
+            request.filters = Some(Box::new(filter_snapshopts));
+
+            let response = read_snapshots(&self.config, Some(request));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+
+        let snapshots = match result.snapshots {
+            None => {
+                warn!("warning: no snapshot available");
+                return Ok(());
+            }
+            Some(snapshots) => snapshots,
+        };
+        for snapshot in snapshots {
+            let snapshot_id = snapshot
+                .snapshot_id
+                .clone()
+                .unwrap_or_else(|| String::from(""));
+            self.snapshots.insert(snapshot_id, snapshot);
+        }
+        warn!("info: fetched {} snapshots", self.snapshots.len());
+        Ok(())
+    }
+
     fn random_wait(&mut self) {
         let wait_time_ms = self
             .rng
@@ -554,6 +601,29 @@ impl Input {
             resources
                 .resources
                 .push(core::Resource::PublicIp(core_public_ip));
+        }
+    }
+
+    fn fill_resource_snapshot(&self, resources: &mut Resources) {
+        let Some(price_gb_per_month) = self.catalog_entry("TinaOS-FCU", "Snapshot:Usage", "Snapshot") else {
+            warn!("gib price is not defined for snapshot");
+            return
+        };
+        for (snapshot_id, snapshot) in &self.snapshots {
+            let core_snapshot = core::Snapshot {
+                osc_cost_version: Some(String::from(VERSION)),
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                resource_id: Some(snapshot_id.clone()),
+                price_per_hour: None,
+                price_per_month: None,
+                volume_size_gib: snapshot.volume_size,
+                price_gb_per_month,
+            };
+            resources
+                .resources
+                .push(core::Resource::Snapshot(core_snapshot));
         }
     }
 }
@@ -829,6 +899,7 @@ impl From<Input> for core::Resources {
         input.fill_resource_vm(&mut resources);
         input.fill_resource_volume(&mut resources);
         input.fill_resource_public_ip(&mut resources);
+        input.fill_resource_snapshot(&mut resources);
         resources
     }
 }
