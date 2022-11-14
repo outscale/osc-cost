@@ -12,6 +12,7 @@ pub enum Resource {
     Vm(Vm),
     Volume(Volume),
     PublicIp(PublicIp),
+    Snapshot(Snapshot),
 }
 
 pub struct Resources {
@@ -25,6 +26,7 @@ impl Resources {
                 Resource::Volume(volume) => volume.compute()?,
                 Resource::Vm(vm) => vm.compute()?,
                 Resource::PublicIp(pip) => pip.compute()?,
+                Resource::Snapshot(snapshot) => snapshot.compute()?,
             }
         }
         Ok(())
@@ -37,6 +39,7 @@ impl Resources {
                 Resource::Volume(volume) => total += volume.price_per_hour()?,
                 Resource::Vm(vm) => total += vm.price_per_hour()?,
                 Resource::PublicIp(pip) => total += pip.price_per_hour()?,
+                Resource::Snapshot(snapshot) => total += snapshot.price_per_hour()?,
             }
         }
         Ok(total)
@@ -180,7 +183,6 @@ pub struct PublicIp {
     pub resource_id: Option<String>,
     pub price_per_hour: Option<f32>,
     pub price_per_month: Option<f32>,
-
     pub price_non_attached: Option<f32>,
     pub price_fist_ip: Option<f32>,
     pub price_next_ips: Option<f32>,
@@ -198,6 +200,37 @@ impl ResourceTrait for PublicIp {
         }
         self.price_per_hour = Some(price_per_hour);
         self.price_per_month = Some(price_per_hour * HOURS_PER_MONTH);
+        Ok(())
+    }
+
+    fn price_per_hour(&self) -> Result<f32, ResourceError> {
+        match self.price_per_hour {
+            Some(price) => Ok(price),
+            None => Err(ResourceError::NotComputed),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Snapshot {
+    pub osc_cost_version: Option<String>,
+    pub account_id: Option<String>,
+    pub read_date_rfc3339: Option<String>,
+    pub region: Option<String>,
+    pub resource_id: Option<String>,
+    pub price_per_hour: Option<f32>,
+    pub price_per_month: Option<f32>,
+    pub volume_size_gib: Option<i32>,
+    pub price_gb_per_month: f32,
+}
+
+impl ResourceTrait for Snapshot {
+    fn compute(&mut self) -> Result<(), ResourceError> {
+        let mut price_per_month = 0_f32;
+        // The computation is not accurate as this size is maximally over-estimated.
+        price_per_month += self.volume_size_gib.unwrap() as f32 * self.price_gb_per_month;
+        self.price_per_hour = Some(price_per_month / HOURS_PER_MONTH);
+        self.price_per_month = Some(price_per_month);
         Ok(())
     }
 
