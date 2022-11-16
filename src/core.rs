@@ -62,7 +62,7 @@ impl Resources {
     }
 
     pub fn csv(&self) -> Result<String, Box<dyn error::Error>> {
-        let mut csv_writer = csv::Writer::from_writer(vec![]);
+        let mut csv_writer = csv::WriterBuilder::new().flexible(true).from_writer(vec![]);
         for resource in &self.resources {
             csv_writer.serialize(resource)?;
         }
