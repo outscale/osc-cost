@@ -1,7 +1,8 @@
 use clap::Parser;
+use serde_json::Deserializer;
 use std::error;
 use std::fs::{self, File};
-use std::io::Write;
+use std::io::{BufReader, Write};
 use std::path::Path;
 use std::process::exit;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -17,24 +18,37 @@ fn main() {
         set_debug_on();
     }
 
-    let mut oapi_input = match oapi::Input::new(args.profile) {
-        Ok(input) => input,
-        Err(e) => {
-            eprintln!("error: cannot load Outscale API as default: {:?}", e);
-            exit(1);
+    let mut resources: core::Resources;
+    if let Some(input_file) = args.input.as_deref() {
+        let f = File::open(input_file).expect("Error while opening the file");
+        let reader = BufReader::new(f);
+        let stream = Deserializer::from_reader(reader).into_iter::<core::ResourceType>();
+        resources = core::Resources {
+            resources: Vec::new(),
+        };
+        for value in stream {
+            match value {
+                Ok(resource) => resources.resources.push(resource),
+                Err(error) => {
+                    eprintln!("error while reading input {}", error);
+                    exit(1);
+                }
+            }
         }
-    };
-    if let Err(error) = oapi_input.fetch() {
-        eprintln!("error: cannot fetch ressources: {:?}", error);
+    } else {
+        let mut oapi_input = match oapi::Input::new(args.profile) {
+            Ok(input) => input,
+            Err(e) => {
+                eprintln!("error: cannot load Outscale API as default: {:?}", e);
+                exit(1);
+            }
+        };
+        if let Err(error) = oapi_input.fetch() {
+            eprintln!("error: cannot fetch ressources: {:?}", error);
+        }
+        resources = core::Resources::from(oapi_input);
     }
-    let mut resources = core::Resources::from(oapi_input);
-    if debug() {
-        eprintln!("info: generated resources has {} vms", resources.vms.len());
-        eprintln!(
-            "info: generated resources has {} volumes",
-            resources.volumes.len()
-        );
-    }
+
     if let Err(error) = resources.compute() {
         eprintln!("error: cannot compute ressource costs: {}", error);
         exit(1);
@@ -97,6 +111,8 @@ struct Args {
     format: String,
     #[arg(long, short = 'o')]
     output: Option<String>,
+    #[arg(long, short = 'i')]
+    input: Option<String>,
 }
 
 static DEBUG: AtomicBool = AtomicBool::new(false);
