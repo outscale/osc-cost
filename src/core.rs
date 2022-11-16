@@ -1,33 +1,40 @@
 use crate::debug;
+use serde::Deserialize;
 use serde::Serialize;
 use std::error;
 use std::fmt;
 
 static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "resource_type")]
+pub enum ResourceType {
+    Vm(Vm),
+    Volume(Volume),
+}
+
 pub struct Resources {
-    pub vms: Vec<Vm>,
-    pub volumes: Vec<Volume>,
+    pub resources: Vec<ResourceType>,
 }
 
 impl Resources {
     pub fn compute(&mut self) -> Result<(), ResourceError> {
-        for vm in self.vms.iter_mut() {
-            vm.compute()?;
-        }
-        for volume in self.volumes.iter_mut() {
-            volume.compute()?;
+        for resource in self.resources.iter_mut() {
+            match resource {
+                ResourceType::Volume(volume) => volume.compute()?,
+                ResourceType::Vm(vm) => vm.compute()?,
+            }
         }
         Ok(())
     }
 
     pub fn cost_per_hour(&self) -> Result<f32, ResourceError> {
         let mut total = 0f32;
-        for vm in &self.vms {
-            total += vm.price_per_hour()?
-        }
-        for volume in &self.volumes {
-            total += volume.price_per_hour()?
+        for resource in &self.resources {
+            match resource {
+                ResourceType::Volume(volume) => total += volume.price_per_hour()?,
+                ResourceType::Vm(vm) => total += vm.price_per_hour()?,
+            }
         }
         Ok(total)
     }
@@ -38,24 +45,12 @@ impl Resources {
 
     pub fn json(&self) -> serde_json::Result<String> {
         let mut out = String::new();
-        for vm in &self.vms {
-            match serde_json::to_string(vm) {
+        for resource in &self.resources {
+            match serde_json::to_string(resource) {
                 Ok(serialized) => out.push_str(serialized.as_str()),
                 Err(e) => {
                     if debug() {
                         eprintln!("warning: provide vm serialization: {}", e);
-                    }
-                    continue;
-                }
-            };
-            out.push('\n');
-        }
-        for volume in &self.volumes {
-            match serde_json::to_string(volume) {
-                Ok(serialized) => out.push_str(serialized.as_str()),
-                Err(e) => {
-                    if debug() {
-                        eprintln!("warning: provide volume serialization: {}", e);
                     }
                     continue;
                 }
@@ -68,8 +63,8 @@ impl Resources {
 
     pub fn csv(&self) -> Result<String, Box<dyn error::Error>> {
         let mut csv_writer = csv::Writer::from_writer(vec![]);
-        for vm in &self.vms {
-            csv_writer.serialize(vm)?;
+        for resource in &self.resources {
+            csv_writer.serialize(resource)?;
         }
         let output = String::from_utf8(csv_writer.into_inner()?)?;
         Ok(output)
@@ -93,7 +88,7 @@ trait Resource {
     fn compute(&mut self) -> Result<(), ResourceError>;
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Vm {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
@@ -142,7 +137,7 @@ impl Resource for Vm {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Volume {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
