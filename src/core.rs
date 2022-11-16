@@ -92,7 +92,6 @@ trait Resource {
 pub struct Vm {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
-    pub resource_type: Option<String>,
     pub read_date_rfc3339: Option<String>,
     pub region: Option<String>,
     pub resource_id: Option<String>,
@@ -141,7 +140,6 @@ impl Resource for Vm {
 pub struct Volume {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
-    pub resource_type: Option<String>,
     pub read_date_rfc3339: Option<String>,
     pub region: Option<String>,
     pub resource_id: Option<String>,

@@ -429,7 +429,6 @@ impl Input {
             let core_vm = core::Vm {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
-                resource_type: Some(String::from("vm")),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
                 resource_id: Some(vm_id.clone()),
@@ -450,7 +449,7 @@ impl Input {
                 price_product_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
                 price_product_per_vm_per_hour: specs.price_product_per_vm_per_hour,
             };
-            resources.vms.push(core_vm);
+            resources.resources.push(core::ResourceType::Vm(core_vm));
         }
     }
 
@@ -463,7 +462,6 @@ impl Input {
             let core_volume = core::Volume {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
-                resource_type: Some(String::from("volume")),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
                 resource_id: Some(volume_id.clone()),
@@ -475,7 +473,9 @@ impl Input {
                 price_gb_per_month: specs.price_gb_per_month,
                 price_iops_per_month: specs.price_iops_per_month,
             };
-            resources.volumes.push(core_volume);
+            resources
+                .resources
+                .push(core::ResourceType::Volume(core_volume));
         }
     }
 }
@@ -884,8 +884,7 @@ impl VolumeSpecs {
 impl From<Input> for core::Resources {
     fn from(input: Input) -> Self {
         let mut resources = core::Resources {
-            vms: Vec::new(),
-            volumes: Vec::new(),
+            resources: Vec::new(),
         };
         input.fill_resource_vm(&mut resources);
         input.fill_resource_volume(&mut resources);
