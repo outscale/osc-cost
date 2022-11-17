@@ -449,7 +449,7 @@ impl Input {
                 price_product_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
                 price_product_per_vm_per_hour: specs.price_product_per_vm_per_hour,
             };
-            resources.resources.push(core::ResourceType::Vm(core_vm));
+            resources.resources.push(core::Resource::Vm(core_vm));
         }
     }
 
@@ -475,7 +475,7 @@ impl Input {
             };
             resources
                 .resources
-                .push(core::ResourceType::Volume(core_volume));
+                .push(core::Resource::Volume(core_volume));
         }
     }
 }
