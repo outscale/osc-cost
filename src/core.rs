@@ -8,21 +8,21 @@ static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "resource_type")]
-pub enum ResourceType {
+pub enum Resource {
     Vm(Vm),
     Volume(Volume),
 }
 
 pub struct Resources {
-    pub resources: Vec<ResourceType>,
+    pub resources: Vec<Resource>,
 }
 
 impl Resources {
     pub fn compute(&mut self) -> Result<(), ResourceError> {
         for resource in self.resources.iter_mut() {
             match resource {
-                ResourceType::Volume(volume) => volume.compute()?,
-                ResourceType::Vm(vm) => vm.compute()?,
+                Resource::Volume(volume) => volume.compute()?,
+                Resource::Vm(vm) => vm.compute()?,
             }
         }
         Ok(())
@@ -32,8 +32,8 @@ impl Resources {
         let mut total = 0f32;
         for resource in &self.resources {
             match resource {
-                ResourceType::Volume(volume) => total += volume.price_per_hour()?,
-                ResourceType::Vm(vm) => total += vm.price_per_hour()?,
+                Resource::Volume(volume) => total += volume.price_per_hour()?,
+                Resource::Vm(vm) => total += vm.price_per_hour()?,
             }
         }
         Ok(total)
@@ -83,7 +83,7 @@ impl fmt::Display for ResourceError {
     }
 }
 
-trait Resource {
+trait ResourceTrait {
     fn price_per_hour(&self) -> Result<f32, ResourceError>;
     fn compute(&mut self) -> Result<(), ResourceError>;
 }
@@ -114,7 +114,7 @@ pub struct Vm {
     pub price_product_per_vm_per_hour: f32,
 }
 
-impl Resource for Vm {
+impl ResourceTrait for Vm {
     fn compute(&mut self) -> Result<(), ResourceError> {
         let mut price_per_hour = 0_f32;
         price_per_hour += self.vm_vcpu as f32 * self.price_vcpu_per_hour;
@@ -152,7 +152,7 @@ pub struct Volume {
     pub price_iops_per_month: f32,
 }
 
-impl Resource for Volume {
+impl ResourceTrait for Volume {
     fn compute(&mut self) -> Result<(), ResourceError> {
         let mut price_per_month = 0_f32;
         price_per_month += self.volume_size.unwrap() as f32 * self.price_gb_per_month;

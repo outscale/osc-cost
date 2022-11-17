@@ -22,7 +22,7 @@ fn main() {
     if let Some(input_file) = args.input.as_deref() {
         let f = File::open(input_file).expect("Error while opening the file");
         let reader = BufReader::new(f);
-        let stream = Deserializer::from_reader(reader).into_iter::<core::ResourceType>();
+        let stream = Deserializer::from_reader(reader).into_iter::<core::Resource>();
         resources = core::Resources {
             resources: Vec::new(),
         };
