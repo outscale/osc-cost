@@ -1,5 +1,11 @@
 osc-cost allow Outscale users to estimate their cloud costs.
 
+# DISCLAMER
+
+This program only provide a cost estimation of the current account state.
+Only offcial bills provided by Outscale will represent your consumption.
+Read License for more details.
+
 # Features
 
 - Data sources:
