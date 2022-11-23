@@ -544,6 +544,65 @@ impl Input {
                 .push(core::Resource::Volume(core_volume));
         }
     }
+
+    fn fill_resource_public_ip(&self, resources: &mut Resources) {
+        for (public_ip_id, public_ip) in &self.public_ips {
+            let mut price_non_attached: Option<f32> = None;
+            let mut price_fist_ip: Option<f32> = None;
+            let mut price_next_ips: Option<f32> = None;
+            let Some(public_ip_str) = &public_ip.public_ip else {
+                if debug() {
+                    eprintln!("warning: cannot get public ip content for {}", public_ip_id);
+                }
+                continue;
+            };
+
+            match &public_ip.vm_id {
+                None => match self.catalog_entry("TinaOS-FCU", "ElasticIP:IdleAddress", "AssociateAddressVPC") {
+                    Some(price) => price_non_attached = Some(price),
+                    None => continue,
+                },
+                Some(vm_id) => match self.vms.get(vm_id) {
+                    Some(vm) => match &vm.public_ip {
+                        Some(vm_public_ip) => match *vm_public_ip == *public_ip_str {
+                            // First Public IP is free
+                            true => price_fist_ip = Some(0_f32),
+                            // Additional Public IP cost
+                            false => price_next_ips = match self.catalog_entry("TinaOS-FCU", "ElasticIP:AdditionalAddress", "AssociateAddressVPC") {
+                                Some(price) => Some(price),
+                                None => continue,
+                            }
+                        },
+                        None => {
+                            if debug() {
+                                eprintln!("warning: vm {} does not seem to have any ip, should at least have {}", vm_id, public_ip_str);
+                                continue;
+                            }
+                        }
+                    },
+                    None => {
+                        if debug() {
+                            eprintln!("warning: cannot find vm id {} for public ip {} ({})", vm_id, public_ip_str, public_ip_id);
+                            continue;
+                        }
+                    },
+                }
+            };
+            let core_public_ip = core::PublicIp {
+                osc_cost_version: Some(String::from(VERSION)),
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                resource_id: Some(public_ip_id.clone()),
+                price_per_hour: None,
+                price_per_month: None,
+                price_non_attached,
+                price_fist_ip,
+                price_next_ips,
+            };
+            resources.resources.push(core::Resource::PublicIp(core_public_ip));
+        }
+    }
 }
 
 struct VmSpecs {
@@ -811,6 +870,7 @@ impl From<Input> for core::Resources {
         };
         input.fill_resource_vm(&mut resources);
         input.fill_resource_volume(&mut resources);
+        input.fill_resource_public_ip(&mut resources);
         resources
     }
 }
