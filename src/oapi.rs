@@ -36,6 +36,7 @@ type VmId = String;
 type VolumeId = String;
 // This string correspond to pure internal forged identifier of a catalog entry.
 // format!("{}/{}/{}", entry.service, entry.type, entry.operation);
+// use catalog_entry() to ease process
 type CatalogId = String;
 type VmTypeName = String;
 
@@ -420,6 +421,27 @@ impl Input {
         }
     }
 
+    fn catalog_entry<S: Into<String>>(&self, service: S, type_: S, operation: S) -> Option<f32> {
+        let entry_id = format!("{}/{}/{}", service.into(), type_.into(), operation.into());
+        match self.catalog.get(&entry_id) {
+            Some(entry) => match entry.unit_price {
+                Some(price) => Some(price),
+                None => {
+                    if debug() {
+                        eprintln!("warning: cannot find price for {}", entry_id);
+                    }
+                    None
+                }
+            },
+            None => {
+                if debug() {
+                    eprintln!("warning: cannot find catalog entry for {}", entry_id);
+                }
+                None
+            }
+        }
+    }
+
     fn fill_resource_vm(&self, resources: &mut Resources) {
         for (vm_id, vm) in &self.vms {
             let specs = match VmSpecs::new(vm, self) {
@@ -552,26 +574,8 @@ impl VmSpecs {
 
     fn parse_product_price(mut self, input: &Input) -> Option<VmSpecs> {
         for product_code in &self.product_codes {
-            let entry_id = format!("TinaOS-FCU/ProductUsage/RunInstances-{}-OD", product_code);
-            let price = match input.catalog.get(&entry_id) {
-                Some(entry) => match entry.unit_price {
-                    Some(price) => price,
-                    None => {
-                        if debug() {
-                            eprintln!(
-                                "warning: product price is not defined for product code {}",
-                                product_code
-                            );
-                        }
-                        continue;
-                    }
-                },
-                None => {
-                    if debug() {
-                        eprintln!("warning: cannot find product code {}", product_code);
-                    }
-                    continue;
-                }
+            let Some(price) = input.catalog_entry("TinaOS-FCU", "ProductUsage", &format!("RunInstances-{}-OD", product_code)) else {
+                continue;
             };
             // License calculation is specific to each product code.
             // https://en.outscale.com/pricing/#licenses
@@ -616,58 +620,10 @@ impl VmSpecs {
     }
 
     fn parse_tina_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        let entry_id = format!(
-            "TinaOS-FCU/CustomCore:v{}-p{}/RunInstances-OD",
-            self.generation, self.performance
-        );
-        self.price_vcpu_per_hour = match input.catalog.get(&entry_id) {
-            Some(entry) => match entry.unit_price {
-                Some(price) => price,
-                None => {
-                    if debug() {
-                        eprintln!(
-                            "warning: cpu price is not defined for VM type tina {}",
-                            self.vm_type
-                        );
-                    }
-                    return None;
-                }
-            },
-            None => {
-                if debug() {
-                    eprintln!(
-                        "warning: cannot find cpu catalog entry for VM type tina {}",
-                        self.vm_type
-                    );
-                }
-                return None;
-            }
-        };
-
-        let entry_id = "TinaOS-FCU/CustomRam/RunInstances-OD".to_string();
-        self.price_ram_gb_per_hour = match input.catalog.get(&entry_id) {
-            Some(entry) => match entry.unit_price {
-                Some(price) => price,
-                None => {
-                    if debug() {
-                        eprintln!(
-                            "warning: ram price is not defined for VM type tina {}",
-                            self.vm_type
-                        );
-                    }
-                    return None;
-                }
-            },
-            None => {
-                if debug() {
-                    eprintln!(
-                        "warning: cannot find ram catalog entry for VM type tina {}",
-                        self.vm_type
-                    );
-                }
-                return None;
-            }
-        };
+        let price_vcpu_per_hour = input.catalog_entry("TinaOS-FCU", &format!("CustomCore:v{}-p{}", self.generation, self.performance), "RunInstances-OD")?;
+        let price_ram_gb_per_hour = input.catalog_entry("TinaOS-FCU", "CustomRam", "RunInstances-OD")?;
+        self.price_vcpu_per_hour = price_vcpu_per_hour;
+        self.price_ram_gb_per_hour = price_ram_gb_per_hour;
         Some(self)
     }
 
@@ -742,30 +698,7 @@ impl VmSpecs {
     }
 
     fn parse_box_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        let entry_id = format!("TinaOS-FCU/BoxUsage:{}/RunInstances-OD", self.vm_type);
-        self.price_box_per_hour = match input.catalog.get(&entry_id) {
-            Some(entry) => match entry.unit_price {
-                Some(price) => price,
-                None => {
-                    if debug() {
-                        eprintln!(
-                            "warning: cpu price is not defined for VM type BoxUsage {}",
-                            self.vm_type
-                        );
-                    }
-                    return None;
-                }
-            },
-            None => {
-                if debug() {
-                    eprintln!(
-                        "warning: cannot find cpu catalog entry for VM type BoxUsage {}",
-                        self.vm_type
-                    );
-                }
-                return None;
-            }
-        };
+        self.price_box_per_hour = input.catalog_entry("TinaOS-FCU", &format!("BoxUsage:{}", self.vm_type), "RunInstances-OD")?;
         Some(self)
     }
 }
@@ -820,63 +753,11 @@ impl VolumeSpecs {
     }
 
     fn parse_volume_prices(mut self, input: &Input) -> Option<VolumeSpecs> {
-        let entry_id = format!(
-            "TinaOS-FCU/BSU:VolumeUsage:{}/CreateVolume",
-            self.volume_type
-        );
-        self.price_gb_per_month = match input.catalog.get(&entry_id) {
-            Some(entry) => match entry.unit_price {
-                Some(price) => price,
-                None => {
-                    if debug() {
-                        eprintln!(
-                            "warning: gb price is not defined for volume type {}",
-                            self.volume_type
-                        );
-                    }
-                    return None;
-                }
-            },
-            None => {
-                if debug() {
-                    eprintln!(
-                        "warning: cannot find gb catalog entry for volume type {}",
-                        self.volume_type
-                    );
-                }
-                return None;
-            }
-        };
-
+        let price_gb_per_month = input.catalog_entry("TinaOS-FCU", &format!("BSU:VolumeUsage:{}", self.volume_type), "CreateVolume")?;
         if self.volume_type == "io1" {
-            let entry_id = format!(
-                "TinaOS-FCU/BSU:VolumeIOPS:{}/CreateVolume",
-                self.volume_type
-            );
-            self.price_iops_per_month = match input.catalog.get(&entry_id) {
-                Some(entry) => match entry.unit_price {
-                    Some(price) => price,
-                    None => {
-                        if debug() {
-                            eprintln!(
-                                "warning: iops price is not defined for volume type {}",
-                                self.volume_type
-                            );
-                        }
-                        return None;
-                    }
-                },
-                None => {
-                    if debug() {
-                        eprintln!(
-                            "warning: cannot find iops catalog entry for volume type {}",
-                            self.volume_type
-                        );
-                    }
-                    return None;
-                }
-            };
+            self.price_iops_per_month = input.catalog_entry("TinaOS-FCU", &format!("BSU:VolumeIOPS:{}", self.volume_type), "CreateVolume")?;
         }
+        self.price_gb_per_month = price_gb_per_month;
         Some(self)
     }
 }
