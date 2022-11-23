@@ -722,18 +722,16 @@ impl VolumeSpecs {
                 return None;
             }
         };
-        let iops = match &volume.iops {
-            Some(iops) => iops,
-            None => {
-                if debug() {
-                    eprintln!("warning: cannot get iops in volume details");
-                }
-                &0
+
+        let iops = volume.iops.unwrap_or_else(|| {
+            if debug() && volume_type == "io1" {
+                eprintln!("warning: cannot get iops in volume details");
             }
-        };
+            0
+        });
 
         let size = match &volume.size {
-            Some(size) => size,
+            Some(size) => *size,
             None => {
                 if debug() {
                     eprintln!("warning: cannot get size in volume details");
@@ -743,8 +741,8 @@ impl VolumeSpecs {
         };
         let out = VolumeSpecs {
             volume_type: volume_type.clone(),
-            iops: (*iops),
-            size: (*size),
+            iops,
+            size,
             price_gb_per_month: 0_f32,
             price_iops_per_month: 0_f32,
         };
