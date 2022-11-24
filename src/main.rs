@@ -1,12 +1,11 @@
 use clap::Parser;
+use log::error;
 use serde_json::Deserializer;
 use std::error;
 use std::fs::{self, File};
 use std::io::{BufReader, Write};
 use std::path::Path;
 use std::process::exit;
-use log::error;
-use env_logger;
 
 mod core;
 mod oapi;

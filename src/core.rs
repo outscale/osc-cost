@@ -171,7 +171,6 @@ impl ResourceTrait for Volume {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublicIp {
     pub osc_cost_version: Option<String>,

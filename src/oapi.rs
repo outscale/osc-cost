@@ -3,7 +3,7 @@ use crate::VERSION;
 use chrono::{DateTime, Utc};
 use http::status::StatusCode;
 use lazy_static::lazy_static;
-use log::{warn, info};
+use log::{info, warn};
 use outscale_api::apis::account_api::read_accounts;
 use outscale_api::apis::catalog_api::read_catalog;
 use outscale_api::apis::configuration::Configuration;
@@ -15,10 +15,11 @@ use outscale_api::apis::vm_api::{read_vm_types, read_vms};
 use outscale_api::apis::volume_api::read_volumes;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{
-    Account, CatalogEntry, FiltersImage, Image, ReadAccountsRequest, ReadAccountsResponse,
-    ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest, ReadImagesResponse,
-    ReadSubregionsRequest, ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse,
-    ReadVmsRequest, ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Vm, VmType, Volume, PublicIp, ReadPublicIpsRequest, ReadPublicIpsResponse
+    Account, CatalogEntry, FiltersImage, Image, PublicIp, ReadAccountsRequest,
+    ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest,
+    ReadImagesResponse, ReadPublicIpsRequest, ReadPublicIpsResponse, ReadSubregionsRequest,
+    ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse, ReadVmsRequest,
+    ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Vm, VmType, Volume,
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
@@ -496,7 +497,11 @@ impl Input {
             };
 
             match &public_ip.vm_id {
-                None => match self.catalog_entry("TinaOS-FCU", "ElasticIP:IdleAddress", "AssociateAddressVPC") {
+                None => match self.catalog_entry(
+                    "TinaOS-FCU",
+                    "ElasticIP:IdleAddress",
+                    "AssociateAddressVPC",
+                ) {
                     Some(price) => price_non_attached = Some(price),
                     None => continue,
                 },
@@ -506,21 +511,33 @@ impl Input {
                             // First Public IP is free
                             true => price_fist_ip = Some(0_f32),
                             // Additional Public IP cost
-                            false => price_next_ips = match self.catalog_entry("TinaOS-FCU", "ElasticIP:AdditionalAddress", "AssociateAddressVPC") {
-                                Some(price) => Some(price),
-                                None => continue,
+                            false => {
+                                price_next_ips = match self.catalog_entry(
+                                    "TinaOS-FCU",
+                                    "ElasticIP:AdditionalAddress",
+                                    "AssociateAddressVPC",
+                                ) {
+                                    Some(price) => Some(price),
+                                    None => continue,
+                                }
                             }
                         },
                         None => {
-                            warn!("vm {} does not seem to have any ip, should at least have {}", vm_id, public_ip_str);
+                            warn!(
+                                "vm {} does not seem to have any ip, should at least have {}",
+                                vm_id, public_ip_str
+                            );
                             continue;
                         }
                     },
                     None => {
-                        warn!("cannot find vm id {} for public ip {} ({})", vm_id, public_ip_str, public_ip_id);
+                        warn!(
+                            "cannot find vm id {} for public ip {} ({})",
+                            vm_id, public_ip_str, public_ip_id
+                        );
                         continue;
-                    },
-                }
+                    }
+                },
             };
             let core_public_ip = core::PublicIp {
                 osc_cost_version: Some(String::from(VERSION)),
@@ -534,7 +551,9 @@ impl Input {
                 price_fist_ip,
                 price_next_ips,
             };
-            resources.resources.push(core::Resource::PublicIp(core_public_ip));
+            resources
+                .resources
+                .push(core::Resource::PublicIp(core_public_ip));
         }
     }
 }
@@ -653,8 +672,13 @@ impl VmSpecs {
     }
 
     fn parse_tina_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        let price_vcpu_per_hour = input.catalog_entry("TinaOS-FCU", &format!("CustomCore:v{}-p{}", self.generation, self.performance), "RunInstances-OD")?;
-        let price_ram_gb_per_hour = input.catalog_entry("TinaOS-FCU", "CustomRam", "RunInstances-OD")?;
+        let price_vcpu_per_hour = input.catalog_entry(
+            "TinaOS-FCU",
+            &format!("CustomCore:v{}-p{}", self.generation, self.performance),
+            "RunInstances-OD",
+        )?;
+        let price_ram_gb_per_hour =
+            input.catalog_entry("TinaOS-FCU", "CustomRam", "RunInstances-OD")?;
         self.price_vcpu_per_hour = price_vcpu_per_hour;
         self.price_ram_gb_per_hour = price_ram_gb_per_hour;
         Some(self)
@@ -727,7 +751,11 @@ impl VmSpecs {
     }
 
     fn parse_box_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        self.price_box_per_hour = input.catalog_entry("TinaOS-FCU", &format!("BoxUsage:{}", self.vm_type), "RunInstances-OD")?;
+        self.price_box_per_hour = input.catalog_entry(
+            "TinaOS-FCU",
+            &format!("BoxUsage:{}", self.vm_type),
+            "RunInstances-OD",
+        )?;
         Some(self)
     }
 }
@@ -776,9 +804,17 @@ impl VolumeSpecs {
     }
 
     fn parse_volume_prices(mut self, input: &Input) -> Option<VolumeSpecs> {
-        let price_gb_per_month = input.catalog_entry("TinaOS-FCU", &format!("BSU:VolumeUsage:{}", self.volume_type), "CreateVolume")?;
+        let price_gb_per_month = input.catalog_entry(
+            "TinaOS-FCU",
+            &format!("BSU:VolumeUsage:{}", self.volume_type),
+            "CreateVolume",
+        )?;
         if self.volume_type == "io1" {
-            self.price_iops_per_month = input.catalog_entry("TinaOS-FCU", &format!("BSU:VolumeIOPS:{}", self.volume_type), "CreateVolume")?;
+            self.price_iops_per_month = input.catalog_entry(
+                "TinaOS-FCU",
+                &format!("BSU:VolumeIOPS:{}", self.volume_type),
+                "CreateVolume",
+            )?;
         }
         self.price_gb_per_month = price_gb_per_month;
         Some(self)
