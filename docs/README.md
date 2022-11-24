@@ -1,9 +1,9 @@
-osc-cost allow Outscale users to estimate their cloud costs.
+osc-cost allows Outscale users to estimate their cloud costs.
 
 ### DISCLAMER
 
-This program only provide a cost estimation of the current account state.
-Only offcial bills provided by Outscale will represent your consumption.
+This program only provides a cost estimation of the current account state.
+Only official bills provided by Outscale will represent your consumption.
 Read license for more details.
 
 # Features
@@ -13,13 +13,16 @@ Read license for more details.
   - JSON
 - Supported resources:
   - Virtual Machines (tina types, aws-compatible types, licenses)
-  - Volules
+  - Volumes
   - Public Ips
+  - Snapshots
 - Output formats:
   - Current cost per hour
   - Current cost per month
   - Json (line-delimited JSON document)
   - CSV
+
+🚨 Warning: snapshot computation is currently known to be over-priced.
 
 # Installation
 
