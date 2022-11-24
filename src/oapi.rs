@@ -1,9 +1,9 @@
 use crate::core::{self, Resources};
-use crate::debug;
 use crate::VERSION;
 use chrono::{DateTime, Utc};
 use http::status::StatusCode;
 use lazy_static::lazy_static;
+use log::{warn, info};
 use outscale_api::apis::account_api::read_accounts;
 use outscale_api::apis::catalog_api::read_catalog;
 use outscale_api::apis::configuration::Configuration;
@@ -107,9 +107,7 @@ impl Input {
 
         let vms = match result.vms {
             None => {
-                if debug() {
-                    eprintln!("warning: no vm list provided");
-                }
+                warn!("no vm list provided");
                 return Ok(());
             }
             Some(vms) => vms,
@@ -120,9 +118,7 @@ impl Input {
                     "running" | "stopping" | "shutting-down" => {}
                     "pending" | "stopped" | "terminated" | "quarantine" => continue,
                     _ => {
-                        if debug() {
-                            eprintln!("warning: un-managed vm state {} found", state);
-                        }
+                        warn!("un-managed vm state {} found", state);
                         continue;
                     }
                 };
@@ -130,9 +126,7 @@ impl Input {
             let vm_id = match &vm.vm_id {
                 Some(id) => id,
                 None => {
-                    if debug() {
-                        eprintln!("warning: vm has no id");
-                    }
+                    warn!("vm has no id");
                     continue;
                 }
             };
@@ -143,10 +137,7 @@ impl Input {
             }
             self.vms.insert(vm_id.clone(), vm);
         }
-
-        if debug() {
-            eprintln!("info: fetched {} vms", self.vms.len());
-        }
+        info!("fetched {} vms", self.vms.len());
         Ok(())
     }
 
@@ -172,9 +163,7 @@ impl Input {
 
         let images = match result.images {
             None => {
-                if debug() {
-                    eprintln!("warning: no image list provided");
-                }
+                warn!("no image list provided");
                 return Ok(());
             }
             Some(images) => images,
@@ -183,10 +172,7 @@ impl Input {
             let image_id = image.image_id.clone().unwrap_or_else(|| String::from(""));
             self.vms_images.insert(image_id, image);
         }
-
-        if debug() {
-            eprintln!("info: fetched {} images used by vms", self.vms_images.len());
-        }
+        info!("fetched {} images used by vms", self.vms_images.len());
         Ok(())
     }
 
@@ -204,9 +190,7 @@ impl Input {
         let catalog = match result.catalog {
             Some(catalog) => catalog,
             None => {
-                if debug() {
-                    eprintln!("warning: no catalog provided");
-                }
+                warn!("no catalog provided");
                 return Ok(());
             }
         };
@@ -214,9 +198,7 @@ impl Input {
         let catalog = match catalog.entries {
             Some(entries) => entries,
             None => {
-                if debug() {
-                    eprintln!("warning: no catalog entries provided");
-                }
+                warn!("no catalog entries provided");
                 return Ok(());
             }
         };
@@ -224,27 +206,21 @@ impl Input {
             let _type = match &entry._type {
                 Some(t) => t.clone(),
                 None => {
-                    if debug() {
-                        eprintln!("warning: catalog entry as no type");
-                    }
+                    warn!("catalog entry as no type");
                     continue;
                 }
             };
             let service = match &entry.service {
                 Some(t) => t.clone(),
                 None => {
-                    if debug() {
-                        eprintln!("warning: catalog entry as no service");
-                    }
+                    warn!("catalog entry as no service");
                     continue;
                 }
             };
             let operation = match &entry.operation {
                 Some(t) => t.clone(),
                 None => {
-                    if debug() {
-                        eprintln!("warning: catalog entry as no operation");
-                    }
+                    warn!("catalog entry as no operation");
                     continue;
                 }
             };
@@ -252,9 +228,7 @@ impl Input {
             self.catalog.insert(entry_id, entry);
         }
 
-        if debug() {
-            eprintln!("info: fetched {} catalog entries", self.catalog.len());
-        }
+        info!("fetched {} catalog entries", self.catalog.len());
         Ok(())
     }
 
@@ -270,9 +244,7 @@ impl Input {
         };
         let vm_types = match result.vm_types {
             None => {
-                if debug() {
-                    eprintln!("warning: no vm type list provided");
-                }
+                warn!("no vm type list provided");
                 return Ok(());
             }
             Some(vm_types) => vm_types,
@@ -281,18 +253,14 @@ impl Input {
             let vm_type_name = match &vm_type.vm_type_name {
                 Some(name) => name.clone(),
                 None => {
-                    if debug() {
-                        eprintln!("warning: vm type has no name");
-                    }
+                    warn!("vm type has no name");
                     continue;
                 }
             };
             self.vm_types.insert(vm_type_name, vm_type);
         }
 
-        if debug() {
-            eprintln!("info: fetched {} vm types", self.vm_types.len());
-        }
+        info!("fetched {} vm types", self.vm_types.len());
         Ok(())
     }
 
@@ -309,9 +277,7 @@ impl Input {
 
         let accounts = match result.accounts {
             None => {
-                if debug() {
-                    eprintln!("warning: no account available");
-                }
+                warn!("no account available");
                 return Ok(());
             }
             Some(accounts) => accounts,
@@ -319,15 +285,11 @@ impl Input {
         self.account = match accounts.first() {
             Some(account) => Some(account.clone()),
             None => {
-                if debug() {
-                    eprintln!("warning: no account in account list");
-                }
+                warn!("no account in account list");
                 return Ok(());
             }
         };
-        if debug() {
-            eprintln!("info: fetched account details");
-        }
+        info!("fetched account details");
         Ok(())
     }
 
@@ -344,9 +306,7 @@ impl Input {
 
         let subregions = match result.subregions {
             None => {
-                if debug() {
-                    eprintln!("warning: no region available");
-                }
+                warn!("no region available");
                 return Ok(());
             }
             Some(subregions) => subregions,
@@ -354,15 +314,11 @@ impl Input {
         self.region = match subregions.first() {
             Some(subregion) => subregion.region_name.clone(),
             None => {
-                if debug() {
-                    eprintln!("warning: no subregion in region list");
-                }
+                warn!("no subregion in region list");
                 return Ok(());
             }
         };
-        if debug() {
-            eprintln!("info: fetched region details");
-        }
+        info!("fetched region details");
         Ok(())
     }
 
@@ -380,9 +336,7 @@ impl Input {
 
         let volumes = match result.volumes {
             None => {
-                if debug() {
-                    eprintln!("warning: no volume available");
-                }
+                warn!("no volume available");
                 return Ok(());
             }
             Some(volumes) => volumes,
@@ -391,9 +345,7 @@ impl Input {
             let volume_id = volume.volume_id.clone().unwrap_or_else(|| String::from(""));
             self.volumes.insert(volume_id, volume);
         }
-        if debug() {
-            eprintln!("info: fetched {} volumes", self.volumes.len());
-        }
+        info!("fetched {} volumes", self.volumes.len());
         Ok(())
     }
 
@@ -409,9 +361,7 @@ impl Input {
         };
         let public_ips = match result.public_ips {
             None => {
-                if debug() {
-                    eprintln!("warning: no public ip list provided");
-                }
+                warn!("no public ip list provided");
                 return Ok(());
             }
             Some(ips) => ips,
@@ -420,18 +370,14 @@ impl Input {
             let public_ip_id = match &public_ip.public_ip_id {
                 Some(id) => id.clone(),
                 None => {
-                    if debug() {
-                        eprintln!("warning: public ip has no id");
-                    }
+                    warn!("public ip has no id");
                     continue;
                 }
             };
             self.public_ips.insert(public_ip_id, public_ip);
         }
 
-        if debug() {
-            eprintln!("info: fetched {} public ips", self.public_ips.len());
-        }
+        info!("info: fetched {} public ips", self.public_ips.len());
         Ok(())
     }
 
@@ -439,9 +385,7 @@ impl Input {
         let wait_time_ms = self
             .rng
             .gen_range(THROTTLING_MIN_WAIT_MS..THROTTLING_MAX_WAIT_MS);
-        if debug() {
-            eprintln!("info: call throttled, waiting for {}ms", wait_time_ms);
-        }
+        info!("call throttled, waiting for {}ms", wait_time_ms);
         sleep(Duration::from_millis(wait_time_ms));
     }
 
@@ -471,16 +415,12 @@ impl Input {
             Some(entry) => match entry.unit_price {
                 Some(price) => Some(price),
                 None => {
-                    if debug() {
-                        eprintln!("warning: cannot find price for {}", entry_id);
-                    }
+                    warn!("cannot find price for {}", entry_id);
                     None
                 }
             },
             None => {
-                if debug() {
-                    eprintln!("warning: cannot find catalog entry for {}", entry_id);
-                }
+                warn!("cannot find catalog entry for {}", entry_id);
                 None
             }
         }
@@ -551,9 +491,7 @@ impl Input {
             let mut price_fist_ip: Option<f32> = None;
             let mut price_next_ips: Option<f32> = None;
             let Some(public_ip_str) = &public_ip.public_ip else {
-                if debug() {
-                    eprintln!("warning: cannot get public ip content for {}", public_ip_id);
-                }
+                warn!("cannot get public ip content for {}", public_ip_id);
                 continue;
             };
 
@@ -574,17 +512,13 @@ impl Input {
                             }
                         },
                         None => {
-                            if debug() {
-                                eprintln!("warning: vm {} does not seem to have any ip, should at least have {}", vm_id, public_ip_str);
-                                continue;
-                            }
+                            warn!("vm {} does not seem to have any ip, should at least have {}", vm_id, public_ip_str);
+                            continue;
                         }
                     },
                     None => {
-                        if debug() {
-                            eprintln!("warning: cannot find vm id {} for public ip {} ({})", vm_id, public_ip_str, public_ip_id);
-                            continue;
-                        }
+                        warn!("cannot find vm id {} for public ip {} ({})", vm_id, public_ip_str, public_ip_id);
+                        continue;
                     },
                 }
             };
@@ -625,9 +559,7 @@ impl VmSpecs {
         let vm_type = match &vm.vm_type {
             Some(vm_type) => vm_type,
             None => {
-                if debug() {
-                    eprintln!("warning: cannot get vm type in vm details");
-                }
+                warn!("cannot get vm type in vm details");
                 return None;
             }
         };
@@ -712,9 +644,7 @@ impl VmSpecs {
                     self.price_product_per_cpu_per_hour += price_for_vm / cores;
                 }
                 _ => {
-                    if debug() {
-                        eprintln!("warning: product code {} is not managed", product_code);
-                    }
+                    warn!("product code {} is not managed", product_code);
                     continue;
                 }
             };
@@ -745,9 +675,7 @@ impl VmSpecs {
             Some(cap) => cap,
             // family and generation is not mandatory to extract price.
             None => {
-                if debug() {
-                    eprintln!("warning: annot extract vm family from {}", self.vm_type);
-                }
+                warn!("annot extract vm family from {}", self.vm_type);
                 return Some(self);
             }
         };
@@ -789,9 +717,7 @@ impl VmSpecs {
             "t1" => ("1", "3"),
             "t2" => ("2", "3"),
             unknown_family => {
-                if debug() {
-                    eprintln!("warning: unkown family name for {}", unknown_family)
-                }
+                warn!("unkown family name for {}", unknown_family);
                 ("", "")
             }
         };
@@ -819,16 +745,14 @@ impl VolumeSpecs {
         let volume_type = match &volume.volume_type {
             Some(volume_type) => volume_type,
             None => {
-                if debug() {
-                    eprintln!("warning: cannot get volume type in volume details");
-                }
+                warn!("warning: cannot get volume type in volume details");
                 return None;
             }
         };
 
         let iops = volume.iops.unwrap_or_else(|| {
-            if debug() && volume_type == "io1" {
-                eprintln!("warning: cannot get iops in volume details");
+            if volume_type == "io1" {
+                warn!("cannot get iops in volume details");
             }
             0
         });
@@ -836,9 +760,7 @@ impl VolumeSpecs {
         let size = match &volume.size {
             Some(size) => *size,
             None => {
-                if debug() {
-                    eprintln!("warning: cannot get size in volume details");
-                }
+                warn!("cannot get size in volume details");
                 return None;
             }
         };

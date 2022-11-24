@@ -4,6 +4,10 @@ This project follows [semantic versioning](https://semver.org/).
 
 Some events may trigger a major (breaking) version like option deprecation or mandatory option.
 
+# Debuging
+
+You can get more details by setting environement variable `RUST_LOG=debug`. Check [env_logger documentation](https://docs.rs/env_logger/0.9.3/env_logger/) for more details.
+
 # Sending a Merge Request
 
 If you plan to make some change in source code, consider making a pull request in [openapi-generator project](https://github.com/OpenAPITools/openapi-generator/).

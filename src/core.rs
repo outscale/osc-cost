@@ -1,4 +1,4 @@
-use crate::debug;
+use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
 use std::error;
@@ -52,9 +52,7 @@ impl Resources {
             match serde_json::to_string(resource) {
                 Ok(serialized) => out.push_str(serialized.as_str()),
                 Err(e) => {
-                    if debug() {
-                        eprintln!("warning: provide vm serialization: {}", e);
-                    }
+                    warn!("provide vm serialization: {}", e);
                     continue;
                 }
             };
