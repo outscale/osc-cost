@@ -9,6 +9,7 @@ use outscale_api::apis::catalog_api::read_catalog;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::image_api::read_images;
+use outscale_api::apis::nat_service_api::read_nat_services;
 use outscale_api::apis::public_ip_api::read_public_ips;
 use outscale_api::apis::snapshot_api::read_snapshots;
 use outscale_api::apis::subregion_api::read_subregions;
@@ -16,12 +17,13 @@ use outscale_api::apis::vm_api::{read_vm_types, read_vms};
 use outscale_api::apis::volume_api::read_volumes;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{
-    Account, CatalogEntry, FiltersImage, FiltersSnapshot, Image, PublicIp, ReadAccountsRequest,
-    ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest,
-    ReadImagesResponse, ReadPublicIpsRequest, ReadPublicIpsResponse, ReadSnapshotsRequest,
-    ReadSnapshotsResponse, ReadSubregionsRequest, ReadSubregionsResponse, ReadVmTypesRequest,
-    ReadVmTypesResponse, ReadVmsRequest, ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse,
-    Snapshot, Vm, VmType, Volume,
+    Account, CatalogEntry, FiltersImage, FiltersSnapshot, Image, NatService, PublicIp,
+    ReadAccountsRequest, ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse,
+    ReadImagesRequest, ReadImagesResponse, ReadNatServicesRequest, ReadNatServicesResponse,
+    ReadPublicIpsRequest, ReadPublicIpsResponse, ReadSnapshotsRequest, ReadSnapshotsResponse,
+    ReadSubregionsRequest, ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse,
+    ReadVmsRequest, ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Snapshot, Vm, VmType,
+    Volume,
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
@@ -39,6 +41,8 @@ type ImageId = String;
 type VmId = String;
 type VolumeId = String;
 type SnapshotId = String;
+type NatServiceId = String;
+
 // This string correspond to pure internal forged identifier of a catalog entry.
 // format!("{}/{}/{}", entry.service, entry.type, entry.operation);
 // use catalog_entry() to ease process
@@ -56,6 +60,7 @@ pub struct Input {
     pub vm_types: HashMap<VmTypeName, VmType>,
     pub account: Option<Account>,
     pub region: Option<String>,
+    pub nat_services: HashMap<NatServiceId, NatService>,
     pub volumes: HashMap<VolumeId, Volume>,
     pub snapshots: HashMap<SnapshotId, Snapshot>,
     pub fetch_date: Option<DateTime<Utc>>,
@@ -80,6 +85,7 @@ impl Input {
             region: None,
             volumes: HashMap::<VolumeId, Volume>::new(),
             snapshots: HashMap::<SnapshotId, Snapshot>::new(),
+            nat_services: HashMap::<NatServiceId, NatService>::new(),
             fetch_date: None,
             public_ips: HashMap::new(),
         })
@@ -96,6 +102,7 @@ impl Input {
         self.fetch_account()?;
         self.fetch_region()?;
         self.fetch_volumes()?;
+        self.fetch_nat_services()?;
         self.fetch_public_ips()?;
         self.fetch_snapshots()?;
         Ok(())
@@ -356,6 +363,34 @@ impl Input {
         Ok(())
     }
 
+    fn fetch_nat_services(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let result: ReadNatServicesResponse = loop {
+            let request = ReadNatServicesRequest::new();
+            let response = read_nat_services(&self.config, Some(request));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+        let nat_services = match result.nat_services {
+            None => {
+                warn!("no nat_service available!");
+                return Ok(());
+            }
+            Some(nat_services) => nat_services,
+        };
+
+        for nat_service in nat_services {
+            let nat_service_id = nat_service
+                .nat_service_id
+                .clone()
+                .unwrap_or_else(|| String::from(""));
+            self.nat_services.insert(nat_service_id, nat_service);
+        }
+        info!("fetched {} nat_service", self.nat_services.len());
+        Ok(())
+    }
     fn fetch_public_ips(&mut self) -> Result<(), Box<dyn error::Error>> {
         let request = ReadPublicIpsRequest::new();
         let result: ReadPublicIpsResponse = loop {
@@ -530,6 +565,29 @@ impl Input {
             resources
                 .resources
                 .push(core::Resource::Volume(core_volume));
+        }
+    }
+    fn fill_resource_nat_service(&self, resources: &mut Resources) {
+        for (nat_service_id, nat_service) in &self.nat_services {
+            let price_product_per_nat_service_per_hour =
+                self.catalog_entry("TinaOS-FCU", "NatGatewayUsage", "CreateNatGateway");
+            let Some(nat_service_id) = &nat_service.nat_service_id else {
+                warn!("cannot get nat_service_id content for {}", nat_service_id );
+                continue;
+            };
+            let core_nat_service = core::NatServices {
+                osc_cost_version: Some(String::from(VERSION)),
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                resource_id: Some(nat_service_id.clone()),
+                price_per_hour: None,
+                price_per_month: None,
+                price_product_per_nat_service_per_hour,
+            };
+            resources
+                .resources
+                .push(core::Resource::NatServices(core_nat_service));
         }
     }
 
@@ -900,6 +958,7 @@ impl From<Input> for core::Resources {
         input.fill_resource_volume(&mut resources);
         input.fill_resource_public_ip(&mut resources);
         input.fill_resource_snapshot(&mut resources);
+        input.fill_resource_nat_service(&mut resources);
         resources
     }
 }
