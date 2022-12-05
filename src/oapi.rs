@@ -594,7 +594,7 @@ impl Input {
     fn fill_resource_public_ip(&self, resources: &mut Resources) {
         for (public_ip_id, public_ip) in &self.public_ips {
             let mut price_non_attached: Option<f32> = None;
-            let mut price_fist_ip: Option<f32> = None;
+            let mut price_first_ip: Option<f32> = None;
             let mut price_next_ips: Option<f32> = None;
             let Some(public_ip_str) = &public_ip.public_ip else {
                 warn!("cannot get public ip content for {}", public_ip_id);
@@ -614,7 +614,7 @@ impl Input {
                     Some(vm) => match &vm.public_ip {
                         Some(vm_public_ip) => match *vm_public_ip == *public_ip_str {
                             // First Public IP is free
-                            true => price_fist_ip = Some(0_f32),
+                            true => price_first_ip = Some(0_f32),
                             // Additional Public IP cost
                             false => {
                                 price_next_ips = match self.catalog_entry(
@@ -653,7 +653,7 @@ impl Input {
                 price_per_hour: None,
                 price_per_month: None,
                 price_non_attached,
-                price_fist_ip,
+                price_first_ip,
                 price_next_ips,
             };
             resources

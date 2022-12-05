@@ -67,7 +67,7 @@ Vm,0.1.0,509075394552,2022-11-24T11:14:31.605623096+00:00,eu-west-2,i-682fc9e7,0
 osc-cost --format=json
 {"resource_type":"Vm","osc_cost_version":"0.1.0","account_id":"509075394552","read_date_rfc3339":"2022-11-24T11:15:50.665643413+00:00","region":"eu-west-2","resource_id":"i-e51434a6","price_per_hour":0.044,"price_per_month":32.12,"vm_type":"tinav4.c1r1p2","vm_vcpu_gen":"4","vm_core_performance":"high","vm_image":"ami-bb490c7e","vm_vcpu":1,"vm_ram_gb":1,"price_vcpu_per_hour":0.039,"price_ram_gb_per_hour":0.005,"price_box_per_hour":0.0,"price_product_per_ram_gb_per_hour":0.0,"price_product_per_cpu_per_hour":0.0,"price_product_per_vm_per_hour":0.0}
 {"resource_type":"Volume","osc_cost_version":"0.1.0","account_id":"509075394552","read_date_rfc3339":"2022-11-24T11:15:50.665643413+00:00","region":"eu-west-2","resource_id":"vol-9e99bad9","price_per_hour":0.02321918,"price_per_month":16.95,"volume_type":"io1","volume_size":15,"volume_iops":1500,"price_gb_per_month":0.13,"price_iops_per_month":0.01}
-{"resource_type":"PublicIp","osc_cost_version":"0.1.0","account_id":"509075394552","read_date_rfc3339":"2022-11-24T11:15:50.665643413+00:00","region":"eu-west-2","resource_id":"eipalloc-2e5f8e4f","price_per_hour":0.0,"price_per_month":0.0,"price_non_attached":null,"price_fist_ip":0.0,"price_next_ips":null}
+{"resource_type":"PublicIp","osc_cost_version":"0.1.0","account_id":"509075394552","read_date_rfc3339":"2022-11-24T11:15:50.665643413+00:00","region":"eu-west-2","resource_id":"eipalloc-2e5f8e4f","price_per_hour":0.0,"price_per_month":0.0,"price_non_attached":null,"price_first_ip":0.0,"price_next_ips":null}
 ...
 ```
 
