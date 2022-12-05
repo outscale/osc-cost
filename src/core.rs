@@ -184,7 +184,7 @@ pub struct PublicIp {
     pub price_per_hour: Option<f32>,
     pub price_per_month: Option<f32>,
     pub price_non_attached: Option<f32>,
-    pub price_fist_ip: Option<f32>,
+    pub price_first_ip: Option<f32>,
     pub price_next_ips: Option<f32>,
 }
 
@@ -193,8 +193,8 @@ impl ResourceTrait for PublicIp {
         let mut price_per_hour: f32 = 0.0;
         if let Some(price_non_attached) = self.price_non_attached {
             price_per_hour += price_non_attached;
-        } else if let Some(price_fist_ip) = self.price_fist_ip {
-            price_per_hour += price_fist_ip;
+        } else if let Some(price_first_ip) = self.price_first_ip {
+            price_per_hour += price_first_ip;
         } else if let Some(price_next_ips) = self.price_next_ips {
             price_per_hour += price_next_ips;
         }
