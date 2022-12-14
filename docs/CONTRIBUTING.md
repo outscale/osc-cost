@@ -4,6 +4,13 @@ This project follows [semantic versioning](https://semver.org/).
 
 Some events may trigger a major (breaking) version like option deprecation or mandatory option.
 
+# Architecture
+
+osc-cost's code is organized in order to have:
+- a choosen input (Outscale API, json, ...)
+- a core which compute costs
+- a choosen output format (hour, month, csv, json, ...)
+
 # Debuging
 
 You can get more details by setting environement variable `RUST_LOG=debug`. Check [env_logger documentation](https://docs.rs/env_logger/0.9.3/env_logger/) for more details.
