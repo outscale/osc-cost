@@ -1,0 +1,21 @@
+name: osc-cost crate.io publishing
+on:
+  release:
+    types: [released]
+
+jobs:
+  publish:
+    environment: publish
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Stable Rust with rustfmt
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        components: rustfmt
+    - name: Cargo publish
+      run: cargo publish
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
