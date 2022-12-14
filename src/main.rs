@@ -1,4 +1,4 @@
-use clap::Parser;
+use args::OutputFormat;
 use log::error;
 use serde_json::Deserializer;
 use std::error;
@@ -7,12 +7,13 @@ use std::io::{BufReader, Write};
 use std::path::Path;
 use std::process::exit;
 
+mod args;
 mod core;
 mod oapi;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
-    let args = Args::parse();
+    let args = args::parse();
     if args.debug {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
     } else {
@@ -55,39 +56,35 @@ fn main() {
     }
 
     let output: String;
-    match args.format.as_str() {
-        "hour" => match resources.cost_per_hour() {
+    match args.format {
+        OutputFormat::Hour => match resources.cost_per_hour() {
             Ok(cost) => output = format!("{}", cost),
             Err(error) => {
                 error!("{}", error);
                 exit(1);
             }
         },
-        "month" => match resources.cost_per_month() {
+        OutputFormat::Month => match resources.cost_per_month() {
             Ok(cost) => output = format!("{}", cost),
             Err(error) => {
                 error!("{}", error);
                 exit(1);
             }
         },
-        "json" => match resources.json() {
+        OutputFormat::Json => match resources.json() {
             Ok(json_details) => output = json_details,
             Err(error) => {
                 error!("{}", error);
                 exit(1);
             }
         },
-        "csv" => match resources.csv() {
+        OutputFormat::Csv => match resources.csv() {
             Ok(csv_details) => output = csv_details,
             Err(error) => {
                 error!("{}", error);
                 exit(1);
             }
         },
-        unknown_format => {
-            error!("unkown format {}", unknown_format);
-            exit(1);
-        }
     };
 
     if let Some(output_file) = args.output.as_deref() {
@@ -98,22 +95,6 @@ fn main() {
     } else {
         println!("{}", output);
     }
-}
-
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about=None)]
-struct Args {
-    // Profile name to use in ~/.osc/config.json
-    #[arg(long, short = 'p', default_value_t = String::from("default"))]
-    profile: String,
-    #[arg(long, default_value_t = false)]
-    debug: bool,
-    #[arg(long, default_value_t = String::from("hour"))]
-    format: String,
-    #[arg(long, short = 'o')]
-    output: Option<String>,
-    #[arg(long, short = 'i')]
-    input: Option<String>,
 }
 
 fn write_to_file(file_path: &str, data: String) -> Result<(), Box<dyn error::Error>> {
