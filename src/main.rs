@@ -58,6 +58,10 @@ fn main() {
         exit(1);
     }
 
+    if args.aggregate {
+        resources = resources.aggregate();
+    }
+
     let output: String;
     match args.format {
         OutputFormat::Hour => match resources.cost_per_hour() {

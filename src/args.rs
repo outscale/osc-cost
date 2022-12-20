@@ -30,6 +30,8 @@ pub struct Args {
     pub input: Option<String>,
     #[command(flatten)]
     pub filter: Option<Filter>,
+    #[arg(long, short = 'a', default_value_t = false)]
+    pub aggregate: bool,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug)]
