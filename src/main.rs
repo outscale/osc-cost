@@ -44,6 +44,9 @@ fn main() {
                 exit(1);
             }
         };
+
+        oapi_input.filters = args.filter;
+
         if let Err(error) = oapi_input.fetch() {
             error!("cannot fetch ressources: {:?}", error);
         }

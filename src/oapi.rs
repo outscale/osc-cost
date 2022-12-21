@@ -1,3 +1,4 @@
+use crate::args::Filter;
 use crate::core::{self, Resources};
 use crate::VERSION;
 use chrono::{DateTime, Utc};
@@ -17,13 +18,13 @@ use outscale_api::apis::vm_api::{read_vm_types, read_vms};
 use outscale_api::apis::volume_api::read_volumes;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{
-    Account, CatalogEntry, FiltersImage, FiltersSnapshot, Image, NatService, PublicIp,
-    ReadAccountsRequest, ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse,
-    ReadImagesRequest, ReadImagesResponse, ReadNatServicesRequest, ReadNatServicesResponse,
-    ReadPublicIpsRequest, ReadPublicIpsResponse, ReadSnapshotsRequest, ReadSnapshotsResponse,
-    ReadSubregionsRequest, ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse,
-    ReadVmsRequest, ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Snapshot, Vm, VmType,
-    Volume,
+    Account, CatalogEntry, FiltersImage, FiltersNatService, FiltersPublicIp, FiltersSnapshot,
+    FiltersVm, FiltersVolume, Image, NatService, PublicIp, ReadAccountsRequest,
+    ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest,
+    ReadImagesResponse, ReadNatServicesRequest, ReadNatServicesResponse, ReadPublicIpsRequest,
+    ReadPublicIpsResponse, ReadSnapshotsRequest, ReadSnapshotsResponse, ReadSubregionsRequest,
+    ReadSubregionsResponse, ReadVmTypesRequest, ReadVmTypesResponse, ReadVmsRequest,
+    ReadVmsResponse, ReadVolumesRequest, ReadVolumesResponse, Snapshot, Vm, VmType, Volume,
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
@@ -65,6 +66,7 @@ pub struct Input {
     pub snapshots: HashMap<SnapshotId, Snapshot>,
     pub fetch_date: Option<DateTime<Utc>>,
     pub public_ips: HashMap<PublicIpId, PublicIp>,
+    pub filters: Option<Filter>,
 }
 
 impl Input {
@@ -88,6 +90,7 @@ impl Input {
             nat_services: HashMap::<NatServiceId, NatService>::new(),
             fetch_date: None,
             public_ips: HashMap::new(),
+            filters: None,
         })
     }
 
@@ -110,7 +113,20 @@ impl Input {
 
     fn fetch_vms(&mut self) -> Result<(), Box<dyn error::Error>> {
         let result: ReadVmsResponse = loop {
-            let request = ReadVmsRequest::new();
+            let filter_vm: FiltersVm = match &self.filters {
+                Some(filter) => FiltersVm {
+                    tag_keys: Some(filter.filter_tag_key.clone()),
+                    tag_values: Some(filter.filter_tag_value.clone()),
+                    tags: Some(filter.filter_tag_key_value.clone()),
+                    ..Default::default()
+                },
+                None => FiltersVm::new(),
+            };
+
+            let request = ReadVmsRequest {
+                filters: Some(Box::new(filter_vm)),
+                ..Default::default()
+            };
             let response = read_vms(&self.config, Some(request));
             if Input::is_throttled(&response) {
                 self.random_wait();
@@ -338,7 +354,19 @@ impl Input {
 
     fn fetch_volumes(&mut self) -> Result<(), Box<dyn error::Error>> {
         let result: ReadVolumesResponse = loop {
-            let request = ReadVolumesRequest::new();
+            let filter_volumes: FiltersVolume = match &self.filters {
+                Some(filter) => FiltersVolume {
+                    tag_keys: Some(filter.filter_tag_key.clone()),
+                    tag_values: Some(filter.filter_tag_value.clone()),
+                    tags: Some(filter.filter_tag_key_value.clone()),
+                    ..Default::default()
+                },
+                None => FiltersVolume::new(),
+            };
+            let request = ReadVolumesRequest {
+                filters: Some(Box::new(filter_volumes)),
+                ..Default::default()
+            };
             let response = read_volumes(&self.config, Some(request));
 
             if Input::is_throttled(&response) {
@@ -365,7 +393,19 @@ impl Input {
 
     fn fetch_nat_services(&mut self) -> Result<(), Box<dyn error::Error>> {
         let result: ReadNatServicesResponse = loop {
-            let request = ReadNatServicesRequest::new();
+            let filters: FiltersNatService = match &self.filters {
+                Some(filter) => FiltersNatService {
+                    tag_keys: Some(filter.filter_tag_key.clone()),
+                    tag_values: Some(filter.filter_tag_value.clone()),
+                    tags: Some(filter.filter_tag_key_value.clone()),
+                    ..Default::default()
+                },
+                None => FiltersNatService::new(),
+            };
+            let request = ReadNatServicesRequest {
+                filters: Some(Box::new(filters)),
+                ..Default::default()
+            };
             let response = read_nat_services(&self.config, Some(request));
             if Input::is_throttled(&response) {
                 self.random_wait();
@@ -392,7 +432,19 @@ impl Input {
         Ok(())
     }
     fn fetch_public_ips(&mut self) -> Result<(), Box<dyn error::Error>> {
-        let request = ReadPublicIpsRequest::new();
+        let filters: FiltersPublicIp = match &self.filters {
+            Some(filter) => FiltersPublicIp {
+                tag_keys: Some(filter.filter_tag_key.clone()),
+                tag_values: Some(filter.filter_tag_value.clone()),
+                tags: Some(filter.filter_tag_key_value.clone()),
+                ..Default::default()
+            },
+            None => FiltersPublicIp::new(),
+        };
+        let request = ReadPublicIpsRequest {
+            filters: Some(Box::new(filters)),
+            ..Default::default()
+        };
         let result: ReadPublicIpsResponse = loop {
             let response = read_public_ips(&self.config, Some(request.clone()));
             if Input::is_throttled(&response) {
@@ -431,14 +483,25 @@ impl Input {
             }
             Some(account_id) => account_id,
         };
+        let filters: FiltersSnapshot = match &self.filters {
+            Some(filter) => FiltersSnapshot {
+                account_ids: Some(vec![account_id.clone()]),
+                tag_keys: Some(filter.filter_tag_key.clone()),
+                tag_values: Some(filter.filter_tag_value.clone()),
+                tags: Some(filter.filter_tag_key_value.clone()),
+                ..Default::default()
+            },
+            None => FiltersSnapshot {
+                account_ids: Some(vec![account_id.clone()]),
+                ..Default::default()
+            },
+        };
+        let request = ReadSnapshotsRequest {
+            filters: Some(Box::new(filters)),
+            ..Default::default()
+        };
         let result: ReadSnapshotsResponse = loop {
-            let mut filter_snapshopts = FiltersSnapshot::new();
-            filter_snapshopts.account_ids = Some(vec![account_id.clone()]);
-
-            let mut request = ReadSnapshotsRequest::new();
-            request.filters = Some(Box::new(filter_snapshopts));
-
-            let response = read_snapshots(&self.config, Some(request));
+            let response = read_snapshots(&self.config, Some(request.clone()));
             if Input::is_throttled(&response) {
                 self.random_wait();
                 continue;
