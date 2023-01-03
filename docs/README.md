@@ -44,7 +44,7 @@ Example of `config.json`:
 
 # Run
 
-Few examples:
+Here are few examples with different output formats. Note that `json` format will provide the most detailed output.
 
 ```
 osc-cost --format=hour # default
