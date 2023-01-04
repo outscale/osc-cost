@@ -51,14 +51,32 @@ pub enum OutputFormat {
 
 impl Args {
     fn validate(self) -> Option<Self> {
-        match (&self.input, &self.source) {
-            (None, _) => Some(self),
-            (_, None) => Some(self),
-            (Some(_), Some(InputSource::Json)) => Some(self),
+        let mut err_count = 0;
+        err_count += match (&self.input, &self.source) {
+            (None, _) => 0,
+            (_, None) => 0,
+            (Some(_), Some(InputSource::Json)) => 0,
             (Some(_), Some(InputSource::Api)) => {
                 error!("cannot use Outscale API data source with --input file");
-                None
+                1
             },
+        };
+        err_count += match (&self.aggregate, &self.format) {
+            (false, _) => 0,
+            (true, OutputFormat::Json) => 0,
+            (true, OutputFormat::Csv) => 0,
+            (true, OutputFormat::Hour) => {
+                error!("cannot aggregate with hour format");
+                1
+            },
+            (true, OutputFormat::Month) => {
+                error!("cannot aggregate with month format");
+                1
+            },
+        };
+        if err_count > 0 {
+            return None;
         }
+        Some(self)
     }
 }
