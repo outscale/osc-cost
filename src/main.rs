@@ -13,12 +13,15 @@ mod oapi;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
-    let args = args::parse();
+    let Some(args) = args::parse() else {
+        exit(1);
+    };
     if args.debug {
         env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
     } else {
         env_logger::init();
     }
+
     let mut resources: core::Resources;
     if let Some(input_file) = args.input.as_deref() {
         let f = File::open(input_file).expect("Error while opening the file");

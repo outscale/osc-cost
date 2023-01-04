@@ -1,7 +1,8 @@
 use clap::Parser;
+use log::error;
 
-pub fn parse() -> Args {
-    Args::parse()
+pub fn parse() -> Option<Args> {
+    Args::parse().validate()
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -22,6 +23,8 @@ pub struct Args {
     pub profile: String,
     #[arg(long, default_value_t = false)]
     pub debug: bool,
+    #[arg(value_enum, long)]
+    pub source: Option<InputSource>,
     #[arg(value_enum, long, default_value_t = OutputFormat::Hour)]
     pub format: OutputFormat,
     #[arg(long, short = 'o')]
@@ -35,9 +38,29 @@ pub struct Args {
 }
 
 #[derive(clap::ValueEnum, Clone, Debug)]
+pub enum InputSource {
+    Json,
+    Api,
+}
+
+#[derive(clap::ValueEnum, Clone, Debug)]
 pub enum OutputFormat {
     Hour,
     Month,
     Json,
     Csv,
+}
+
+impl Args {
+    fn validate(self) -> Option<Self> {
+        match (&self.input, &self.source) {
+            (None, _) => Some(self),
+            (_, None) => Some(self),
+            (Some(_), Some(InputSource::Json)) => Some(self),
+            (Some(_), Some(InputSource::Api)) => {
+                error!("cannot use Outscale API data source with --input file");
+                None
+            },
+        }
+    }
 }
