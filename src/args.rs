@@ -21,8 +21,6 @@ pub struct Args {
     // Profile name to use in ~/.osc/config.json
     #[arg(long, short = 'p', default_value_t = String::from("default"))]
     pub profile: String,
-    #[arg(long, default_value_t = false)]
-    pub debug: bool,
     #[arg(value_enum, long)]
     pub source: Option<InputSource>,
     #[arg(value_enum, long, default_value_t = OutputFormat::Hour)]
