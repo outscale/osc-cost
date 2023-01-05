@@ -121,3 +121,6 @@ ko_or_die "input as csv should be an error" "$oc" --input output.csv
 ko_or_die "input as hour should be an error" "$oc" --input output.hour
 ko_or_die "input as month should be an error" "$oc" --input output.month
 ko_or_die "--input with --source api" "$oc" --input somefile --source api
+
+# json source can only work with --input for now (stdin not supported yet)
+ko_or_die "json source need --input in order to work" "$oc" --source json

@@ -53,13 +53,17 @@ impl Args {
     fn validate(self) -> Option<Self> {
         let mut err_count = 0;
         err_count += match (&self.input, &self.source) {
-            (None, _) => 0,
+            (None, Some(InputSource::Api)) => 0,
+            (None, Some(InputSource::Json)) => {
+                error!("must use --input argument with when using json data source");
+                1
+            }
             (_, None) => 0,
             (Some(_), Some(InputSource::Json)) => 0,
             (Some(_), Some(InputSource::Api)) => {
                 error!("cannot use Outscale API data source with --input file");
                 1
-            },
+            }
         };
         err_count += match (&self.aggregate, &self.format) {
             (false, _) => 0,
@@ -68,11 +72,11 @@ impl Args {
             (true, OutputFormat::Hour) => {
                 error!("cannot aggregate with hour format");
                 1
-            },
+            }
             (true, OutputFormat::Month) => {
                 error!("cannot aggregate with month format");
                 1
-            },
+            }
         };
         if err_count > 0 {
             return None;
