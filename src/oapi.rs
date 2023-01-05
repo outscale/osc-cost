@@ -485,14 +485,14 @@ impl Input {
         };
         let filters: FiltersSnapshot = match &self.filters {
             Some(filter) => FiltersSnapshot {
-                account_ids: Some(vec![account_id.clone()]),
+                account_ids: Some(vec![account_id]),
                 tag_keys: Some(filter.filter_tag_key.clone()),
                 tag_values: Some(filter.filter_tag_value.clone()),
                 tags: Some(filter.filter_tag_key_value.clone()),
                 ..Default::default()
             },
             None => FiltersSnapshot {
-                account_ids: Some(vec![account_id.clone()]),
+                account_ids: Some(vec![account_id]),
                 ..Default::default()
             },
         };
