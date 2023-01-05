@@ -33,6 +33,8 @@ pub struct Args {
     pub filter: Option<Filter>,
     #[arg(long, short = 'a', default_value_t = false)]
     pub aggregate: bool,
+    #[arg(long, default_value_t = false)]
+    pub help_resources: bool,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug)]
