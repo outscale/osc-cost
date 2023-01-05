@@ -4,9 +4,10 @@ use crate::VERSION;
 use chrono::{DateTime, Utc};
 use http::status::StatusCode;
 use lazy_static::lazy_static;
-use log::{info, warn};
+use log::{info, trace, warn};
 use outscale_api::apis::account_api::read_accounts;
 use outscale_api::apis::catalog_api::read_catalog;
+use outscale_api::apis::configuration::AWSv4Key;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::configuration_file::ConfigurationFile;
 use outscale_api::apis::image_api::read_images;
@@ -29,9 +30,12 @@ use outscale_api::models::{
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
 use regex::Regex;
+use secrecy::SecretString;
 use std::collections::HashMap;
 use std::convert::From;
+use std::env;
 use std::error;
+use std::error::Error;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -71,10 +75,7 @@ pub struct Input {
 
 impl Input {
     pub fn new(profile_name: String) -> Result<Input, Box<dyn error::Error>> {
-        let config_file = ConfigurationFile::load_default()?;
-        let mut config = config_file.configuration(profile_name)?;
-        config.user_agent = Some(format!("osc-cost/{VERSION}"));
-
+        let config = Input::get_config(profile_name)?;
         Ok(Input {
             config,
             rng: thread_rng(),
@@ -92,6 +93,37 @@ impl Input {
             public_ips: HashMap::new(),
             filters: None,
         })
+    }
+
+    fn get_config(profile_name: String) -> Result<Configuration, Box<dyn Error>> {
+        trace!("try to load api config from environment variables");
+        let ak_env = env::var("OSC_ACCESS_KEY").ok();
+        let sk_env = env::var("OSC_SECRET_KEY").ok();
+        let region_env = env::var("OSC_REGION").ok();
+        match (ak_env, sk_env, region_env) {
+            (Some(access_key), Some(secret_key), Some(region)) => {
+                let mut config = Configuration::new();
+                config.base_path = format!("https://api.{}.outscale.com/api/v1", region);
+                config.aws_v4_key = Some(AWSv4Key {
+                    region,
+                    access_key,
+                    secret_key: SecretString::new(secret_key),
+                    service: "oapi".to_string(),
+                });
+                config.user_agent = Some(format!("osc-cost/{VERSION}"));
+                return Ok(config);
+            }
+            (None, None, None) => {}
+            (_, _, _) => {
+                warn!("some credentials are set through environement variable but not all. OSC_ACCESS_KEY, OSC_SECRET_KEY and OSC_REGION are required to use this method.");
+            }
+        };
+
+        trace!("try to load api config from configuration file");
+        let config_file = ConfigurationFile::load_default()?;
+        let mut config = config_file.configuration(profile_name)?;
+        config.user_agent = Some(format!("osc-cost/{VERSION}"));
+        Ok(config)
     }
 
     pub fn fetch(&mut self) -> Result<(), Box<dyn error::Error>> {
