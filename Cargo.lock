@@ -1112,6 +1112,7 @@ dependencies = [
  "outscale_api",
  "rand 0.8.5",
  "regex",
+ "secrecy",
  "serde",
  "serde_json",
 ]
