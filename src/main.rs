@@ -18,6 +18,11 @@ fn main() {
         exit(1);
     };
 
+    if args.help_resources {
+        print_managed_resources_help();
+        exit(0);
+    }
+
     let mut resources: core::Resources;
     if let Some(input_file) = args.input.as_deref() {
         let f = File::open(input_file).expect("Error while opening the file");
@@ -113,4 +118,23 @@ fn write_to_file(file_path: &str, data: String) -> Result<(), Box<dyn error::Err
     file.write_all(data.as_bytes()).unwrap();
 
     Ok(())
+}
+
+pub fn print_managed_resources_help() {
+    println!(
+        r#"The following resources are managed by osc-cost:
+- Volumes (io1, gp2, standard)
+- Snapshots (warning: estimation only, should be the highest price)
+- Public Ips
+- Nat Services
+- Virtual Machines: including Tina types, AWS-compatible types
+- Licenses (included in virtual machines details)
+  - Microsoft Windows Server 2019 License (0002)
+  - mapr license (0003)
+  - Oracle Linux OS Distribution (0004)
+  - Microsoft Windows 10 E3 VDA License (0005)
+  - Red Hat Enterprise Linux OS Distribution (0006)
+  - sql server web (0007)
+"#
+    );
 }
