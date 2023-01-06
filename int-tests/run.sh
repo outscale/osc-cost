@@ -41,10 +41,12 @@ function ok_or_die {
     what="$1"
     cmd="${*:2}"
     echo -n "$what ... "
-    if $cmd &> /dev/null ; then
+    if $cmd &> /tmp/output ; then
         echo "OK"
     else
         echo "FAILED"
+        echo "$cmd"
+        cat /tmp/output
         exit 1
     fi
 }
@@ -53,8 +55,10 @@ function ko_or_die {
     what="$1"
     cmd="${*:2}"
     echo -n "$what ... "
-    if $cmd &> /dev/null ; then
+    if $cmd &> /tmp/output ; then
         echo "FAILED"
+        echo "$cmd"
+        cat /tmp/output
         exit 1
     else
         echo "OK"
