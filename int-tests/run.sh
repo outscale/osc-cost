@@ -117,6 +117,7 @@ ko_or_die "aggregate month format with explicit json input source" "$oc" --aggre
 ok_or_die "aggregate csv format with explicit json input source" "$oc" --aggregate --input output.json --source json --format csv
 
 # input should only work with json as input source
+echo "some,non-empty,csv" > output.csv
 ko_or_die "input as csv should be an error" "$oc" --input output.csv
 ko_or_die "input as hour should be an error" "$oc" --input output.hour
 ko_or_die "input as month should be an error" "$oc" --input output.month
