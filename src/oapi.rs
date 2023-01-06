@@ -149,7 +149,7 @@ impl Input {
                 Some(filter) => FiltersVm {
                     tag_keys: Some(filter.filter_tag_key.clone()),
                     tag_values: Some(filter.filter_tag_value.clone()),
-                    tags: Some(filter.filter_tag_key_value.clone()),
+                    tags: Some(filter.filter_tag.clone()),
                     ..Default::default()
                 },
                 None => FiltersVm::new(),
@@ -390,7 +390,7 @@ impl Input {
                 Some(filter) => FiltersVolume {
                     tag_keys: Some(filter.filter_tag_key.clone()),
                     tag_values: Some(filter.filter_tag_value.clone()),
-                    tags: Some(filter.filter_tag_key_value.clone()),
+                    tags: Some(filter.filter_tag.clone()),
                     ..Default::default()
                 },
                 None => FiltersVolume::new(),
@@ -429,7 +429,7 @@ impl Input {
                 Some(filter) => FiltersNatService {
                     tag_keys: Some(filter.filter_tag_key.clone()),
                     tag_values: Some(filter.filter_tag_value.clone()),
-                    tags: Some(filter.filter_tag_key_value.clone()),
+                    tags: Some(filter.filter_tag.clone()),
                     ..Default::default()
                 },
                 None => FiltersNatService::new(),
@@ -468,7 +468,7 @@ impl Input {
             Some(filter) => FiltersPublicIp {
                 tag_keys: Some(filter.filter_tag_key.clone()),
                 tag_values: Some(filter.filter_tag_value.clone()),
-                tags: Some(filter.filter_tag_key_value.clone()),
+                tags: Some(filter.filter_tag.clone()),
                 ..Default::default()
             },
             None => FiltersPublicIp::new(),
@@ -520,7 +520,7 @@ impl Input {
                 account_ids: Some(vec![account_id]),
                 tag_keys: Some(filter.filter_tag_key.clone()),
                 tag_values: Some(filter.filter_tag_value.clone()),
-                tags: Some(filter.filter_tag_key_value.clone()),
+                tags: Some(filter.filter_tag.clone()),
                 ..Default::default()
             },
             None => FiltersSnapshot {
