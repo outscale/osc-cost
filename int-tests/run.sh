@@ -123,5 +123,12 @@ ko_or_die "input as hour should be an error" "$oc" --input output.hour
 ko_or_die "input as month should be an error" "$oc" --input output.month
 ko_or_die "--input with --source api" "$oc" --input somefile --source api
 
+# bad credentials should result of a failure
+SK_TMP=$OSC_SECRET_KEY
+OSC_SECRET_KEY="BAD_SECRET_KEY"
+ko_or_die "bad ak/sk should fail" "$oc"
+OSC_SECRET_KEY=$SK_TMP
+unset SK_TMP
+
 # json source can only work with --input for now (stdin not supported yet)
 ko_or_die "json source need --input in order to work" "$oc" --source json
