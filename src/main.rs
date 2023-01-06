@@ -49,6 +49,7 @@ fn main() {
 
         if let Err(error) = oapi_input.fetch() {
             error!("cannot fetch ressources: {:?}", error);
+            exit(1);
         }
         resources = core::Resources::from(oapi_input);
     }
