@@ -12,7 +12,7 @@ pub struct Filter {
     #[arg(long, value_name = "VALUE")]
     pub filter_tag_value: Vec<String>,
     #[arg(long, value_name = "KEY=VALUE")]
-    pub filter_tag_key_value: Vec<String>,
+    pub filter_tag: Vec<String>,
 }
 
 #[derive(Parser, Debug)]
