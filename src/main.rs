@@ -2,8 +2,8 @@ use args::OutputFormat;
 use log::error;
 use serde_json::Deserializer;
 use std::error;
-use std::fs::{self, File};
-use std::io::{BufReader, Write};
+use std::fs::{ self, File };
+use std::io::{ BufReader, Write };
 use std::path::Path;
 use std::process::exit;
 
@@ -24,38 +24,42 @@ fn main() {
     }
 
     let mut resources: core::Resources;
-    if let Some(input_file) = args.input.as_deref() {
-        let f = File::open(input_file).expect("Error while opening the file");
-        let reader = BufReader::new(f);
-        let stream = Deserializer::from_reader(reader).into_iter::<core::Resource>();
-        resources = core::Resources {
-            resources: Vec::new(),
-        };
-        for value in stream {
-            match value {
-                Ok(resource) => resources.resources.push(resource),
-                Err(error) => {
-                    error!("while reading input {}", error);
-                    exit(1);
+
+    match args.input {
+        Some(input_file) => {
+            let f = File::open(input_file).expect("Error while opening the file");
+            let reader = BufReader::new(f);
+            let stream = Deserializer::from_reader(reader).into_iter::<core::Resource>();
+            resources = core::Resources {
+                resources: Vec::new(),
+            };
+            for value in stream {
+                match value {
+                    Ok(resource) => resources.resources.push(resource),
+                    Err(error) => {
+                        error!("while reading input {}", error);
+                        exit(1);
+                    }
                 }
             }
         }
-    } else {
-        let mut oapi_input = match oapi::Input::new(args.profile) {
-            Ok(input) => input,
-            Err(e) => {
-                error!("cannot load Outscale API as default: {:?}", e);
+        None => {
+            let mut oapi_input = match oapi::Input::new(args.profile) {
+                Ok(input) => input,
+                Err(e) => {
+                    error!("cannot load Outscale API as default: {:?}", e);
+                    exit(1);
+                }
+            };
+
+            oapi_input.filters = args.filter;
+
+            if let Err(error) = oapi_input.fetch() {
+                error!("cannot fetch ressources: {:?}", error);
                 exit(1);
             }
-        };
-
-        oapi_input.filters = args.filter;
-
-        if let Err(error) = oapi_input.fetch() {
-            error!("cannot fetch ressources: {:?}", error);
-            exit(1);
+            resources = core::Resources::from(oapi_input);
         }
-        resources = core::Resources::from(oapi_input);
     }
 
     if let Err(error) = resources.compute() {
@@ -69,35 +73,47 @@ fn main() {
 
     let output: String;
     match args.format {
-        OutputFormat::Hour => match resources.cost_per_hour() {
-            Ok(cost) => output = format!("{}", cost),
-            Err(error) => {
-                error!("{}", error);
-                exit(1);
+        OutputFormat::Hour =>
+            match resources.cost_per_hour() {
+                Ok(cost) => {
+                    output = format!("{}", cost);
+                }
+                Err(error) => {
+                    error!("{}", error);
+                    exit(1);
+                }
             }
-        },
-        OutputFormat::Month => match resources.cost_per_month() {
-            Ok(cost) => output = format!("{}", cost),
-            Err(error) => {
-                error!("{}", error);
-                exit(1);
+        OutputFormat::Month =>
+            match resources.cost_per_month() {
+                Ok(cost) => {
+                    output = format!("{}", cost);
+                }
+                Err(error) => {
+                    error!("{}", error);
+                    exit(1);
+                }
             }
-        },
-        OutputFormat::Json => match resources.json() {
-            Ok(json_details) => output = json_details,
-            Err(error) => {
-                error!("{}", error);
-                exit(1);
+        OutputFormat::Json =>
+            match resources.json() {
+                Ok(json_details) => {
+                    output = json_details;
+                }
+                Err(error) => {
+                    error!("{}", error);
+                    exit(1);
+                }
             }
-        },
-        OutputFormat::Csv => match resources.csv() {
-            Ok(csv_details) => output = csv_details,
-            Err(error) => {
-                error!("{}", error);
-                exit(1);
+        OutputFormat::Csv =>
+            match resources.csv() {
+                Ok(csv_details) => {
+                    output = csv_details;
+                }
+                Err(error) => {
+                    error!("{}", error);
+                    exit(1);
+                }
             }
-        },
-    };
+    }
 
     if let Some(output_file) = args.output.as_deref() {
         write_to_file(output_file, output).unwrap_or_else(|error| {
