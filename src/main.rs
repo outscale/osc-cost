@@ -1,7 +1,7 @@
 use args::OutputFormat;
 use log::error;
 use serde_json::Deserializer;
-use std::error;
+use std::error::{ self, Error };
 use std::fs::{ self, File };
 use std::io::{ BufReader, Write };
 use std::path::Path;
@@ -12,117 +12,58 @@ mod core;
 mod oapi;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
-    let Some(args) = args::parse() else {
-        exit(1);
-    };
+    let args = args::parse().expect("unable to parse arguments");
 
     if args.help_resources {
         print_managed_resources_help();
-        exit(0);
-    }
-
-    let mut resources: core::Resources;
-
-    match args.input {
-        Some(input_file) => {
-            let f = File::open(input_file).expect("Error while opening the file");
-            let reader = BufReader::new(f);
-            let stream = Deserializer::from_reader(reader).into_iter::<core::Resource>();
-            resources = core::Resources {
-                resources: Vec::new(),
-            };
-            for value in stream {
-                match value {
-                    Ok(resource) => resources.resources.push(resource),
-                    Err(error) => {
-                        error!("while reading input {}", error);
-                        exit(1);
-                    }
-                }
-            }
-        }
-        None => {
-            let mut oapi_input = match oapi::Input::new(args.profile) {
-                Ok(input) => input,
-                Err(e) => {
-                    error!("cannot load Outscale API as default: {:?}", e);
-                    exit(1);
-                }
-            };
-
-            oapi_input.filters = args.filter;
-
-            if let Err(error) = oapi_input.fetch() {
-                error!("cannot fetch ressources: {:?}", error);
-                exit(1);
-            }
-            resources = core::Resources::from(oapi_input);
-        }
-    }
-
-    if let Err(error) = resources.compute() {
-        error!("cannot compute ressource costs: {}", error);
-        exit(1);
-    }
-
-    if args.aggregate {
-        resources = resources.aggregate();
-    }
-
-    let output: String;
-    match args.format {
-        OutputFormat::Hour =>
-            match resources.cost_per_hour() {
-                Ok(cost) => {
-                    output = format!("{}", cost);
-                }
-                Err(error) => {
-                    error!("{}", error);
-                    exit(1);
-                }
-            }
-        OutputFormat::Month =>
-            match resources.cost_per_month() {
-                Ok(cost) => {
-                    output = format!("{}", cost);
-                }
-                Err(error) => {
-                    error!("{}", error);
-                    exit(1);
-                }
-            }
-        OutputFormat::Json =>
-            match resources.json() {
-                Ok(json_details) => {
-                    output = json_details;
-                }
-                Err(error) => {
-                    error!("{}", error);
-                    exit(1);
-                }
-            }
-        OutputFormat::Csv =>
-            match resources.csv() {
-                Ok(csv_details) => {
-                    output = csv_details;
-                }
-                Err(error) => {
-                    error!("{}", error);
-                    exit(1);
-                }
-            }
-    }
-
-    if let Some(output_file) = args.output.as_deref() {
-        write_to_file(output_file, output).unwrap_or_else(|error| {
-            error!("Problem writing output to the file: {:?}", error);
-            exit(1);
-        });
     } else {
-        println!("{}", output);
+        let mut resources = match args.input {
+            Some(input_file) => {
+                let reader = BufReader::new(File::open(input_file)?);
+                let stream = Deserializer::from_reader(reader).into_iter::<core::Resource>();
+
+                core::Resources {
+                    resources: stream
+                        .map(|value| value.expect("while reading input"))
+                        .collect::<Vec<core::Resource>>(),
+                }
+            }
+            None => {
+                let mut oapi_input = oapi::Input::new(args.profile)?;
+                oapi_input.filters = args.filter;
+                oapi_input.fetch()?;
+                core::Resources::from(oapi_input)
+            }
+        };
+
+        resources.compute()?;
+
+        if args.aggregate {
+            resources = resources.aggregate();
+        }
+
+        let output = match args.format {
+            OutputFormat::Hour => format!("{}", resources.cost_per_hour()?),
+            OutputFormat::Month => format!("{}", resources.cost_per_month()?),
+            OutputFormat::Json => resources.json()?,
+            OutputFormat::Csv => resources.csv()?,
+        };
+
+        match args.output {
+            Some(output_file) => {
+                write_to_file(&output_file, output).unwrap_or_else(|error| {
+                    error!("Problem writing output to the file: {:?}", error);
+                    exit(1);
+                });
+            }
+            None => {
+                println!("{}", output);
+            }
+        }
     }
+    Ok(())
 }
 
 fn write_to_file(file_path: &str, data: String) -> Result<(), Box<dyn error::Error>> {
