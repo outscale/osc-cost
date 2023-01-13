@@ -1,9 +1,9 @@
 use args::OutputFormat;
 use log::error;
 use serde_json::Deserializer;
-use std::error::{ self, Error };
-use std::fs::{ self, File };
-use std::io::{ BufReader, Write };
+use std::error::{self, Error};
+use std::fs::{self, File};
+use std::io::{BufReader, Write};
 use std::path::Path;
 use std::process::exit;
 

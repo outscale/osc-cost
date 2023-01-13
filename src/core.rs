@@ -116,10 +116,7 @@ impl Resources {
     }
 
     pub fn csv(&self) -> Result<String, Box<dyn error::Error>> {
-        let mut csv_writer = csv::WriterBuilder
-            ::new()
-            .flexible(true)
-            .from_writer(vec![]);
+        let mut csv_writer = csv::WriterBuilder::new().flexible(true).from_writer(vec![]);
         for resource in &self.resources {
             csv_writer.serialize(resource)?;
         }
@@ -355,56 +352,51 @@ impl ResourceTrait for Aggregate {
 impl From<Resource> for Aggregate {
     fn from(item: Resource) -> Self {
         match item {
-            Resource::Vm(vm) =>
-                Aggregate {
-                    osc_cost_version: vm.osc_cost_version,
-                    account_id: vm.account_id,
-                    read_date_rfc3339: vm.read_date_rfc3339,
-                    region: vm.region,
-                    price_per_hour: vm.price_per_hour,
-                    price_per_month: vm.price_per_month,
-                    aggregated_resource_type: "Vm".to_string(),
-                },
-            Resource::Volume(volume) =>
-                Aggregate {
-                    osc_cost_version: volume.osc_cost_version,
-                    account_id: volume.account_id,
-                    read_date_rfc3339: volume.read_date_rfc3339,
-                    region: volume.region,
-                    price_per_hour: volume.price_per_hour,
-                    price_per_month: volume.price_per_month,
-                    aggregated_resource_type: "Volume".to_string(),
-                },
-            Resource::PublicIp(public_ip) =>
-                Aggregate {
-                    osc_cost_version: public_ip.osc_cost_version,
-                    account_id: public_ip.account_id,
-                    read_date_rfc3339: public_ip.read_date_rfc3339,
-                    region: public_ip.region,
-                    price_per_hour: public_ip.price_per_hour,
-                    price_per_month: public_ip.price_per_month,
-                    aggregated_resource_type: "PublicIp".to_string(),
-                },
-            Resource::Snapshot(snapshot) =>
-                Aggregate {
-                    osc_cost_version: snapshot.osc_cost_version,
-                    account_id: snapshot.account_id,
-                    read_date_rfc3339: snapshot.read_date_rfc3339,
-                    region: snapshot.region,
-                    price_per_hour: snapshot.price_per_hour,
-                    price_per_month: snapshot.price_per_month,
-                    aggregated_resource_type: "Snapshot".to_string(),
-                },
-            Resource::NatServices(nat_service) =>
-                Aggregate {
-                    osc_cost_version: nat_service.osc_cost_version,
-                    account_id: nat_service.account_id,
-                    read_date_rfc3339: nat_service.read_date_rfc3339,
-                    region: nat_service.region,
-                    price_per_hour: nat_service.price_per_hour,
-                    price_per_month: nat_service.price_per_month,
-                    aggregated_resource_type: "NatServices".to_string(),
-                },
+            Resource::Vm(vm) => Aggregate {
+                osc_cost_version: vm.osc_cost_version,
+                account_id: vm.account_id,
+                read_date_rfc3339: vm.read_date_rfc3339,
+                region: vm.region,
+                price_per_hour: vm.price_per_hour,
+                price_per_month: vm.price_per_month,
+                aggregated_resource_type: "Vm".to_string(),
+            },
+            Resource::Volume(volume) => Aggregate {
+                osc_cost_version: volume.osc_cost_version,
+                account_id: volume.account_id,
+                read_date_rfc3339: volume.read_date_rfc3339,
+                region: volume.region,
+                price_per_hour: volume.price_per_hour,
+                price_per_month: volume.price_per_month,
+                aggregated_resource_type: "Volume".to_string(),
+            },
+            Resource::PublicIp(public_ip) => Aggregate {
+                osc_cost_version: public_ip.osc_cost_version,
+                account_id: public_ip.account_id,
+                read_date_rfc3339: public_ip.read_date_rfc3339,
+                region: public_ip.region,
+                price_per_hour: public_ip.price_per_hour,
+                price_per_month: public_ip.price_per_month,
+                aggregated_resource_type: "PublicIp".to_string(),
+            },
+            Resource::Snapshot(snapshot) => Aggregate {
+                osc_cost_version: snapshot.osc_cost_version,
+                account_id: snapshot.account_id,
+                read_date_rfc3339: snapshot.read_date_rfc3339,
+                region: snapshot.region,
+                price_per_hour: snapshot.price_per_hour,
+                price_per_month: snapshot.price_per_month,
+                aggregated_resource_type: "Snapshot".to_string(),
+            },
+            Resource::NatServices(nat_service) => Aggregate {
+                osc_cost_version: nat_service.osc_cost_version,
+                account_id: nat_service.account_id,
+                read_date_rfc3339: nat_service.read_date_rfc3339,
+                region: nat_service.region,
+                price_per_hour: nat_service.price_per_hour,
+                price_per_month: nat_service.price_per_month,
+                aggregated_resource_type: "NatServices".to_string(),
+            },
             Resource::Aggregate(aggregate) => aggregate,
         }
     }
