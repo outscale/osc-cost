@@ -40,6 +40,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use self::flexible_gpus::FlexibleGpuId;
+use self::load_balancers::LoadbalancerId;
 
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
@@ -58,6 +59,7 @@ type VmTypeName = String;
 type PublicIpId = String;
 
 mod flexible_gpus;
+mod load_balancers;
 
 pub struct Input {
     config: Configuration,
@@ -76,6 +78,7 @@ pub struct Input {
     pub public_ips: HashMap<PublicIpId, PublicIp>,
     pub filters: Option<Filter>,
     pub flexible_gpus: HashMap<FlexibleGpuId, FlexibleGpu>,
+    pub load_balancers: Vec<LoadbalancerId>,
 }
 
 impl Input {
@@ -98,6 +101,7 @@ impl Input {
             public_ips: HashMap::new(),
             filters: None,
             flexible_gpus: HashMap::new(),
+            load_balancers: Vec::new(),
         })
     }
 
@@ -147,6 +151,7 @@ impl Input {
         self.fetch_public_ips()?;
         self.fetch_snapshots()?;
         self.fetch_flexible_gpus()?;
+        self.fetch_load_balancers()?;
         Ok(())
     }
 
@@ -1062,6 +1067,7 @@ impl From<Input> for core::Resources {
         input.fill_resource_snapshot(&mut resources);
         input.fill_resource_nat_service(&mut resources);
         input.fill_resource_flexible_gpus(&mut resources);
+        input.fill_resource_load_balancers(&mut resources);
         resources
     }
 }
