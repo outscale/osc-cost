@@ -6,10 +6,12 @@ use std::error;
 use std::fmt;
 
 use self::flexible_gpus::FlexibleGpu;
+use self::load_balancers::LoadBalancer;
 
 static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
 
 pub mod flexible_gpus;
+pub mod load_balancers;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "resource_type")]
@@ -21,6 +23,7 @@ pub enum Resource {
     NatServices(NatServices),
     Aggregate(Aggregate),
     FlexibleGpu(FlexibleGpu),
+    LoadBalancer(LoadBalancer),
 }
 
 pub struct Resources {
@@ -38,6 +41,7 @@ impl Resources {
                 Resource::NatServices(nat_service) => nat_service.compute()?,
                 Resource::Aggregate(aggregate) => aggregate.compute()?,
                 Resource::FlexibleGpu(flexible_gpu) => flexible_gpu.compute()?,
+                Resource::LoadBalancer(load_balancer) => load_balancer.compute()?,
             }
         }
         Ok(())
@@ -98,6 +102,9 @@ impl Resources {
                 }
                 Resource::FlexibleGpu(flexible_gpu) => {
                     total += flexible_gpu.price_per_hour()?;
+                }
+                Resource::LoadBalancer(load_balancer) => {
+                    total += load_balancer.price_per_hour()?;
                 }
             }
         }
@@ -415,6 +422,15 @@ impl From<Resource> for Aggregate {
                 price_per_hour: flexible_gpu.price_per_hour,
                 price_per_month: flexible_gpu.price_per_month,
                 aggregated_resource_type: "FlexibleGpu".to_string(),
+            },
+            Resource::LoadBalancer(load_balancer) => Aggregate {
+                osc_cost_version: load_balancer.osc_cost_version,
+                account_id: load_balancer.account_id,
+                read_date_rfc3339: load_balancer.read_date_rfc3339,
+                region: load_balancer.region,
+                price_per_hour: load_balancer.price_per_hour,
+                price_per_month: load_balancer.price_per_month,
+                aggregated_resource_type: "LoadBalancer".to_string(),
             },
         }
     }
