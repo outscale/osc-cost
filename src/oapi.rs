@@ -13,14 +13,13 @@ use outscale_api::apis::configuration::AWSv4Key;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::configuration_file::{ConfigurationFile, ConfigurationFileError};
 use outscale_api::apis::nat_service_api::read_nat_services;
-use outscale_api::apis::snapshot_api::read_snapshots;
 use outscale_api::apis::subregion_api::read_subregions;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{
-    Account, CatalogEntry, FiltersNatService, FiltersSnapshot, FlexibleGpu, Image, NatService,
-    PublicIp, ReadAccountsRequest, ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse,
-    ReadNatServicesRequest, ReadNatServicesResponse, ReadSnapshotsRequest, ReadSnapshotsResponse,
-    ReadSubregionsRequest, ReadSubregionsResponse, Snapshot, Vm, VmType, Volume,
+    Account, CatalogEntry, FiltersNatService, FlexibleGpu, Image, NatService, PublicIp,
+    ReadAccountsRequest, ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse,
+    ReadNatServicesRequest, ReadNatServicesResponse, ReadSubregionsRequest, ReadSubregionsResponse,
+    Snapshot, Vm, VmType, Volume,
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
@@ -37,6 +36,7 @@ use self::flexible_gpus::FlexibleGpuId;
 use self::load_balancers::LoadbalancerId;
 use self::oos::{BucketId, OosBucket};
 use self::public_ips::PublicIpId;
+use self::snapshots::SnapshotId;
 use self::vms::VmId;
 use self::volumes::VolumeId;
 use self::vpn::VpnId;
@@ -45,7 +45,6 @@ static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
 type ImageId = String;
-type SnapshotId = String;
 type NatServiceId = String;
 
 // This string correspond to pure internal forged identifier of a catalog entry.
@@ -58,6 +57,7 @@ mod flexible_gpus;
 mod load_balancers;
 mod oos;
 mod public_ips;
+mod snapshots;
 mod vms;
 mod volumes;
 mod vpn;
@@ -353,58 +353,6 @@ impl Input {
         Ok(())
     }
 
-    fn fetch_snapshots(&mut self) -> Result<(), Box<dyn error::Error>> {
-        let account_id = match self.account_id() {
-            None => {
-                warn!("warning: no account_id available... skipping");
-                return Ok(());
-            }
-            Some(account_id) => account_id,
-        };
-        let filters: FiltersSnapshot = match &self.filters {
-            Some(filter) => FiltersSnapshot {
-                account_ids: Some(vec![account_id]),
-                tag_keys: Some(filter.filter_tag_key.clone()),
-                tag_values: Some(filter.filter_tag_value.clone()),
-                tags: Some(filter.filter_tag.clone()),
-                ..Default::default()
-            },
-            None => FiltersSnapshot {
-                account_ids: Some(vec![account_id]),
-                ..Default::default()
-            },
-        };
-        let request = ReadSnapshotsRequest {
-            filters: Some(Box::new(filters)),
-            ..Default::default()
-        };
-        let result: ReadSnapshotsResponse = loop {
-            let response = read_snapshots(&self.config, Some(request.clone()));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
-        };
-
-        let snapshots = match result.snapshots {
-            None => {
-                warn!("warning: no snapshot available");
-                return Ok(());
-            }
-            Some(snapshots) => snapshots,
-        };
-        for snapshot in snapshots {
-            let snapshot_id = snapshot
-                .snapshot_id
-                .clone()
-                .unwrap_or_else(|| String::from(""));
-            self.snapshots.insert(snapshot_id, snapshot);
-        }
-        warn!("info: fetched {} snapshots", self.snapshots.len());
-        Ok(())
-    }
-
     fn random_wait(&mut self) {
         let wait_time_ms = self
             .rng
@@ -471,29 +419,6 @@ impl Input {
             resources
                 .resources
                 .push(core::Resource::NatServices(core_nat_service));
-        }
-    }
-
-    fn fill_resource_snapshot(&self, resources: &mut Resources) {
-        let Some(price_gb_per_month) = self.catalog_entry("TinaOS-FCU", "Snapshot:Usage", "Snapshot") else {
-            warn!("gib price is not defined for snapshot");
-            return
-        };
-        for (snapshot_id, snapshot) in &self.snapshots {
-            let core_snapshot = core::Snapshot {
-                osc_cost_version: Some(String::from(VERSION)),
-                account_id: self.account_id(),
-                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
-                region: self.region.clone(),
-                resource_id: Some(snapshot_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                volume_size_gib: snapshot.volume_size,
-                price_gb_per_month,
-            };
-            resources
-                .resources
-                .push(core::Resource::Snapshot(core_snapshot));
         }
     }
 }
