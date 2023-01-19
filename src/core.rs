@@ -5,7 +5,11 @@ use std::collections::HashMap;
 use std::error;
 use std::fmt;
 
+use self::flexible_gpus::FlexibleGpu;
+
 static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
+
+pub mod flexible_gpus;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "resource_type")]
@@ -16,6 +20,7 @@ pub enum Resource {
     Snapshot(Snapshot),
     NatServices(NatServices),
     Aggregate(Aggregate),
+    FlexibleGpu(FlexibleGpu),
 }
 
 pub struct Resources {
@@ -32,6 +37,7 @@ impl Resources {
                 Resource::Snapshot(snapshot) => snapshot.compute()?,
                 Resource::NatServices(nat_service) => nat_service.compute()?,
                 Resource::Aggregate(aggregate) => aggregate.compute()?,
+                Resource::FlexibleGpu(flexible_gpu) => flexible_gpu.compute()?,
             }
         }
         Ok(())
@@ -89,6 +95,9 @@ impl Resources {
                 }
                 Resource::Aggregate(aggregade) => {
                     total += aggregade.price_per_hour()?;
+                }
+                Resource::FlexibleGpu(flexible_gpu) => {
+                    total += flexible_gpu.price_per_hour()?;
                 }
             }
         }
@@ -398,6 +407,15 @@ impl From<Resource> for Aggregate {
                 aggregated_resource_type: "NatServices".to_string(),
             },
             Resource::Aggregate(aggregate) => aggregate,
+            Resource::FlexibleGpu(flexible_gpu) => Aggregate {
+                osc_cost_version: flexible_gpu.osc_cost_version,
+                account_id: flexible_gpu.account_id,
+                read_date_rfc3339: flexible_gpu.read_date_rfc3339,
+                region: flexible_gpu.region,
+                price_per_hour: flexible_gpu.price_per_hour,
+                price_per_month: flexible_gpu.price_per_month,
+                aggregated_resource_type: "FlexibleGpu".to_string(),
+            },
         }
     }
 }

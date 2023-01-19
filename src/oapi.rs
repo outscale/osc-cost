@@ -20,7 +20,7 @@ use outscale_api::apis::volume_api::read_volumes;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{
     Account, CatalogEntry, FiltersImage, FiltersNatService, FiltersPublicIp, FiltersSnapshot,
-    FiltersVm, FiltersVolume, Image, NatService, PublicIp, ReadAccountsRequest,
+    FiltersVm, FiltersVolume, FlexibleGpu, Image, NatService, PublicIp, ReadAccountsRequest,
     ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse, ReadImagesRequest,
     ReadImagesResponse, ReadNatServicesRequest, ReadNatServicesResponse, ReadPublicIpsRequest,
     ReadPublicIpsResponse, ReadSnapshotsRequest, ReadSnapshotsResponse, ReadSubregionsRequest,
@@ -39,6 +39,8 @@ use std::error::Error;
 use std::thread::sleep;
 use std::time::Duration;
 
+use self::flexible_gpus::FlexibleGpuId;
+
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
@@ -54,6 +56,8 @@ type NatServiceId = String;
 type CatalogId = String;
 type VmTypeName = String;
 type PublicIpId = String;
+
+mod flexible_gpus;
 
 pub struct Input {
     config: Configuration,
@@ -71,6 +75,7 @@ pub struct Input {
     pub fetch_date: Option<DateTime<Utc>>,
     pub public_ips: HashMap<PublicIpId, PublicIp>,
     pub filters: Option<Filter>,
+    pub flexible_gpus: HashMap<FlexibleGpuId, FlexibleGpu>,
 }
 
 impl Input {
@@ -92,6 +97,7 @@ impl Input {
             fetch_date: None,
             public_ips: HashMap::new(),
             filters: None,
+            flexible_gpus: HashMap::new(),
         })
     }
 
@@ -140,6 +146,7 @@ impl Input {
         self.fetch_nat_services()?;
         self.fetch_public_ips()?;
         self.fetch_snapshots()?;
+        self.fetch_flexible_gpus()?;
         Ok(())
     }
 
@@ -1054,6 +1061,7 @@ impl From<Input> for core::Resources {
         input.fill_resource_public_ip(&mut resources);
         input.fill_resource_snapshot(&mut resources);
         input.fill_resource_nat_service(&mut resources);
+        input.fill_resource_flexible_gpus(&mut resources);
         resources
     }
 }
