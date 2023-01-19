@@ -16,15 +16,13 @@ use outscale_api::apis::nat_service_api::read_nat_services;
 use outscale_api::apis::public_ip_api::read_public_ips;
 use outscale_api::apis::snapshot_api::read_snapshots;
 use outscale_api::apis::subregion_api::read_subregions;
-use outscale_api::apis::volume_api::read_volumes;
 use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::{
-    Account, CatalogEntry, FiltersNatService, FiltersPublicIp, FiltersSnapshot, FiltersVolume,
-    FlexibleGpu, Image, NatService, PublicIp, ReadAccountsRequest, ReadAccountsResponse,
-    ReadCatalogRequest, ReadCatalogResponse, ReadNatServicesRequest, ReadNatServicesResponse,
-    ReadPublicIpsRequest, ReadPublicIpsResponse, ReadSnapshotsRequest, ReadSnapshotsResponse,
-    ReadSubregionsRequest, ReadSubregionsResponse, ReadVolumesRequest, ReadVolumesResponse,
-    Snapshot, Vm, VmType, Volume,
+    Account, CatalogEntry, FiltersNatService, FiltersPublicIp, FiltersSnapshot, FlexibleGpu, Image,
+    NatService, PublicIp, ReadAccountsRequest, ReadAccountsResponse, ReadCatalogRequest,
+    ReadCatalogResponse, ReadNatServicesRequest, ReadNatServicesResponse, ReadPublicIpsRequest,
+    ReadPublicIpsResponse, ReadSnapshotsRequest, ReadSnapshotsResponse, ReadSubregionsRequest,
+    ReadSubregionsResponse, Snapshot, Vm, VmType, Volume,
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
@@ -41,13 +39,13 @@ use self::flexible_gpus::FlexibleGpuId;
 use self::load_balancers::LoadbalancerId;
 use self::oos::{BucketId, OosBucket};
 use self::vms::VmId;
+use self::volumes::VolumeId;
 use self::vpn::VpnId;
 
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
 type ImageId = String;
-type VolumeId = String;
 type SnapshotId = String;
 type NatServiceId = String;
 
@@ -62,6 +60,7 @@ mod flexible_gpus;
 mod load_balancers;
 mod oos;
 mod vms;
+mod volumes;
 mod vpn;
 
 pub struct Input {
@@ -314,45 +313,6 @@ impl Input {
         Ok(())
     }
 
-    fn fetch_volumes(&mut self) -> Result<(), Box<dyn error::Error>> {
-        let result: ReadVolumesResponse = loop {
-            let filter_volumes: FiltersVolume = match &self.filters {
-                Some(filter) => FiltersVolume {
-                    tag_keys: Some(filter.filter_tag_key.clone()),
-                    tag_values: Some(filter.filter_tag_value.clone()),
-                    tags: Some(filter.filter_tag.clone()),
-                    ..Default::default()
-                },
-                None => FiltersVolume::new(),
-            };
-            let request = ReadVolumesRequest {
-                filters: Some(Box::new(filter_volumes)),
-                ..Default::default()
-            };
-            let response = read_volumes(&self.config, Some(request));
-
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
-        };
-
-        let volumes = match result.volumes {
-            None => {
-                warn!("no volume available");
-                return Ok(());
-            }
-            Some(volumes) => volumes,
-        };
-        for volume in volumes {
-            let volume_id = volume.volume_id.clone().unwrap_or_else(|| String::from(""));
-            self.volumes.insert(volume_id, volume);
-        }
-        info!("fetched {} volumes", self.volumes.len());
-        Ok(())
-    }
-
     fn fetch_nat_services(&mut self) -> Result<(), Box<dyn error::Error>> {
         let result: ReadNatServicesResponse = loop {
             let filters: FiltersNatService = match &self.filters {
@@ -534,31 +494,6 @@ impl Input {
         }
     }
 
-    fn fill_resource_volume(&self, resources: &mut Resources) {
-        for (volume_id, volume) in &self.volumes {
-            let specs = match VolumeSpecs::new(volume, self) {
-                Some(s) => s,
-                None => continue,
-            };
-            let core_volume = core::Volume {
-                osc_cost_version: Some(String::from(VERSION)),
-                account_id: self.account_id(),
-                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
-                region: self.region.clone(),
-                resource_id: Some(volume_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                volume_type: Some(specs.volume_type.clone()),
-                volume_iops: Some(specs.iops),
-                volume_size: Some(specs.size),
-                price_gb_per_month: specs.price_gb_per_month,
-                price_iops_per_month: specs.price_iops_per_month,
-            };
-            resources
-                .resources
-                .push(core::Resource::Volume(core_volume));
-        }
-    }
     fn fill_resource_nat_service(&self, resources: &mut Resources) {
         for (nat_service_id, nat_service) in &self.nat_services {
             let price_product_per_nat_service_per_hour =
@@ -675,67 +610,6 @@ impl Input {
                 .resources
                 .push(core::Resource::Snapshot(core_snapshot));
         }
-    }
-}
-
-struct VolumeSpecs {
-    volume_type: String,
-    size: i32,
-    iops: i32,
-    price_gb_per_month: f32,
-    price_iops_per_month: f32,
-}
-
-impl VolumeSpecs {
-    fn new(volume: &Volume, input: &Input) -> Option<Self> {
-        let volume_type = match &volume.volume_type {
-            Some(volume_type) => volume_type,
-            None => {
-                warn!("warning: cannot get volume type in volume details");
-                return None;
-            }
-        };
-
-        let iops = volume.iops.unwrap_or_else(|| {
-            if volume_type == "io1" {
-                warn!("cannot get iops in volume details");
-            }
-            0
-        });
-
-        let size = match &volume.size {
-            Some(size) => *size,
-            None => {
-                warn!("cannot get size in volume details");
-                return None;
-            }
-        };
-        let out = VolumeSpecs {
-            volume_type: volume_type.clone(),
-            iops,
-            size,
-            price_gb_per_month: 0_f32,
-            price_iops_per_month: 0_f32,
-        };
-
-        out.parse_volume_prices(input)
-    }
-
-    fn parse_volume_prices(mut self, input: &Input) -> Option<VolumeSpecs> {
-        let price_gb_per_month = input.catalog_entry(
-            "TinaOS-FCU",
-            &format!("BSU:VolumeUsage:{}", self.volume_type),
-            "CreateVolume",
-        )?;
-        if self.volume_type == "io1" {
-            self.price_iops_per_month = input.catalog_entry(
-                "TinaOS-FCU",
-                &format!("BSU:VolumeIOPS:{}", self.volume_type),
-                "CreateVolume",
-            )?;
-        }
-        self.price_gb_per_month = price_gb_per_month;
-        Some(self)
     }
 }
 
