@@ -19,6 +19,9 @@ Read license for more details.
   - Volumes
   - Public Ips
   - Snapshots
+  - Load Balancer
+  - Flexible GPU
+  - VPN Connection
 - Output formats:
   - Current cost per hour
   - Current cost per month
