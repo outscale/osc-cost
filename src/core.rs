@@ -7,11 +7,13 @@ use std::fmt;
 
 use self::flexible_gpus::FlexibleGpu;
 use self::load_balancers::LoadBalancer;
+use self::vpn::Vpn;
 
 static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
 
 pub mod flexible_gpus;
 pub mod load_balancers;
+pub mod vpn;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "resource_type")]
@@ -24,6 +26,7 @@ pub enum Resource {
     Aggregate(Aggregate),
     FlexibleGpu(FlexibleGpu),
     LoadBalancer(LoadBalancer),
+    Vpn(Vpn),
 }
 
 pub struct Resources {
@@ -42,6 +45,7 @@ impl Resources {
                 Resource::Aggregate(aggregate) => aggregate.compute()?,
                 Resource::FlexibleGpu(flexible_gpu) => flexible_gpu.compute()?,
                 Resource::LoadBalancer(load_balancer) => load_balancer.compute()?,
+                Resource::Vpn(vpn) => vpn.compute()?,
             }
         }
         Ok(())
@@ -105,6 +109,9 @@ impl Resources {
                 }
                 Resource::LoadBalancer(load_balancer) => {
                     total += load_balancer.price_per_hour()?;
+                }
+                Resource::Vpn(vpn) => {
+                    total += vpn.price_per_hour()?;
                 }
             }
         }
@@ -431,6 +438,15 @@ impl From<Resource> for Aggregate {
                 price_per_hour: load_balancer.price_per_hour,
                 price_per_month: load_balancer.price_per_month,
                 aggregated_resource_type: "LoadBalancer".to_string(),
+            },
+            Resource::Vpn(resource) => Aggregate {
+                osc_cost_version: resource.osc_cost_version,
+                account_id: resource.account_id,
+                read_date_rfc3339: resource.read_date_rfc3339,
+                region: resource.region,
+                price_per_hour: resource.price_per_hour,
+                price_per_month: resource.price_per_month,
+                aggregated_resource_type: "Vpn".to_string(),
             },
         }
     }

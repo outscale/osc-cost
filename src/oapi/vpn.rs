@@ -1,0 +1,72 @@
+use std::error;
+
+use log::warn;
+use outscale_api::{
+    apis::vpn_connection_api::read_vpn_connections,
+    models::{ReadVpnConnectionsRequest, ReadVpnConnectionsResponse},
+};
+
+use crate::{
+    core::{vpn::Vpn, Resource, Resources},
+    VERSION,
+};
+
+use super::Input;
+
+pub type VpnId = String;
+
+impl Input {
+    pub fn fetch_vpns(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let request = ReadVpnConnectionsRequest {
+            ..Default::default()
+        };
+        let result: ReadVpnConnectionsResponse = loop {
+            let response = read_vpn_connections(&self.config, Some(request.clone()));
+            if Input::is_throttled(&response) {
+                self.random_wait();
+                continue;
+            }
+            break response?;
+        };
+
+        let resources = match result.vpn_connections {
+            None => {
+                warn!("warning: no vpn available");
+                return Ok(());
+            }
+            Some(vpn) => vpn,
+        };
+        for vpn in resources {
+            let vpn_id = vpn
+                .vpn_connection_id
+                .clone()
+                .unwrap_or_else(|| String::from(""));
+            self.vpns.push(vpn_id);
+        }
+        warn!("info: fetched {} vpns", self.vpns.len());
+        Ok(())
+    }
+
+    pub fn fill_resource_vpns(&self, resources: &mut Resources) {
+        let Some(price_per_hour) = self.catalog_entry(
+            "TinaOS-FCU",
+            "ConnectionUsage",
+            "CreateVpnConnection",
+        ) else {
+            warn!("warning: could not retrieve the catalog for vpn");
+            return;
+        };
+        for resource_id in &self.vpns {
+            let core_resource = Vpn {
+                osc_cost_version: Some(String::from(VERSION)),
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                resource_id: Some(resource_id.clone()),
+                price_per_hour: Some(price_per_hour),
+                price_per_month: None,
+            };
+            resources.resources.push(Resource::Vpn(core_resource));
+        }
+    }
+}
