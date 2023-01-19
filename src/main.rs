@@ -84,6 +84,9 @@ pub fn print_managed_resources_help() {
 - Snapshots (warning: estimation only, should be the highest price)
 - Public Ips
 - Nat Services
+- Load Balancer
+- VPN Connection
+- Flexible GPU
 - Virtual Machines: including Tina types, AWS-compatible types
 - Licenses (included in virtual machines details)
   - Microsoft Windows Server 2019 License (0002)
