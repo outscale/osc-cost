@@ -41,6 +41,7 @@ use std::time::Duration;
 
 use self::flexible_gpus::FlexibleGpuId;
 use self::load_balancers::LoadbalancerId;
+use self::vpn::VpnId;
 
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
@@ -60,6 +61,7 @@ type PublicIpId = String;
 
 mod flexible_gpus;
 mod load_balancers;
+mod vpn;
 
 pub struct Input {
     config: Configuration,
@@ -79,6 +81,7 @@ pub struct Input {
     pub filters: Option<Filter>,
     pub flexible_gpus: HashMap<FlexibleGpuId, FlexibleGpu>,
     pub load_balancers: Vec<LoadbalancerId>,
+    pub vpns: Vec<VpnId>,
 }
 
 impl Input {
@@ -102,6 +105,7 @@ impl Input {
             filters: None,
             flexible_gpus: HashMap::new(),
             load_balancers: Vec::new(),
+            vpns: Vec::new(),
         })
     }
 
@@ -152,6 +156,7 @@ impl Input {
         self.fetch_snapshots()?;
         self.fetch_flexible_gpus()?;
         self.fetch_load_balancers()?;
+        self.fetch_vpns()?;
         Ok(())
     }
 
@@ -1068,6 +1073,7 @@ impl From<Input> for core::Resources {
         input.fill_resource_nat_service(&mut resources);
         input.fill_resource_flexible_gpus(&mut resources);
         input.fill_resource_load_balancers(&mut resources);
+        input.fill_resource_vpns(&mut resources);
         resources
     }
 }
