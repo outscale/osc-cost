@@ -3,7 +3,7 @@ use std::error;
 use log::warn;
 use outscale_api::{
     apis::vpn_connection_api::read_vpn_connections,
-    models::{ReadVpnConnectionsRequest, ReadVpnConnectionsResponse},
+    models::{FiltersVpnConnection, ReadVpnConnectionsRequest, ReadVpnConnectionsResponse},
 };
 
 use crate::{
@@ -17,7 +17,17 @@ pub type VpnId = String;
 
 impl Input {
     pub fn fetch_vpns(&mut self) -> Result<(), Box<dyn error::Error>> {
+        let filters = match &self.filters {
+            Some(filter) => FiltersVpnConnection {
+                tag_keys: Some(filter.filter_tag_key.clone()),
+                tag_values: Some(filter.filter_tag_value.clone()),
+                tags: Some(filter.filter_tag.clone()),
+                ..Default::default()
+            },
+            None => FiltersVpnConnection::new(),
+        };
         let request = ReadVpnConnectionsRequest {
+            filters: Some(Box::new(filters)),
             ..Default::default()
         };
         let result: ReadVpnConnectionsResponse = loop {
