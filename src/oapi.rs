@@ -1,6 +1,9 @@
 use crate::args::Filter;
 use crate::core::{self, Resources};
 use crate::VERSION;
+use aws_config::SdkConfig;
+use aws_credential_types::provider::SharedCredentialsProvider;
+use aws_sdk_s3::{Credentials, Region};
 use chrono::{DateTime, Utc};
 use http::status::StatusCode;
 use lazy_static::lazy_static;
@@ -9,7 +12,7 @@ use outscale_api::apis::account_api::read_accounts;
 use outscale_api::apis::catalog_api::read_catalog;
 use outscale_api::apis::configuration::AWSv4Key;
 use outscale_api::apis::configuration::Configuration;
-use outscale_api::apis::configuration_file::ConfigurationFile;
+use outscale_api::apis::configuration_file::{ConfigurationFile, ConfigurationFileError};
 use outscale_api::apis::image_api::read_images;
 use outscale_api::apis::nat_service_api::read_nat_services;
 use outscale_api::apis::public_ip_api::read_public_ips;
@@ -65,6 +68,7 @@ mod vpn;
 
 pub struct Input {
     config: Configuration,
+    aws_config: SdkConfig,
     rng: ThreadRng,
     pub vms: HashMap<VmId, Vm>,
     pub vms_images: HashMap<ImageId, Image>,
@@ -86,9 +90,10 @@ pub struct Input {
 
 impl Input {
     pub fn new(profile_name: String) -> Result<Input, Box<dyn error::Error>> {
-        let config = Input::get_config(profile_name)?;
+        let (config, aws_config) = Input::get_config(profile_name)?;
         Ok(Input {
             config,
+            aws_config,
             rng: thread_rng(),
             vms: HashMap::new(),
             vms_images: HashMap::new(),
@@ -109,7 +114,7 @@ impl Input {
         })
     }
 
-    fn get_config(profile_name: String) -> Result<Configuration, Box<dyn Error>> {
+    fn get_config(profile_name: String) -> Result<(Configuration, SdkConfig), Box<dyn Error>> {
         trace!("try to load api config from environment variables");
         let ak_env = env::var("OSC_ACCESS_KEY").ok();
         let sk_env = env::var("OSC_SECRET_KEY").ok();
@@ -119,13 +124,16 @@ impl Input {
                 let mut config = Configuration::new();
                 config.base_path = format!("https://api.{}.outscale.com/api/v1", region);
                 config.aws_v4_key = Some(AWSv4Key {
-                    region,
-                    access_key,
-                    secret_key: SecretString::new(secret_key),
+                    region: region.clone(),
+                    access_key: access_key.clone(),
+                    secret_key: SecretString::new(secret_key.clone()),
                     service: "oapi".to_string(),
                 });
                 config.user_agent = Some(format!("osc-cost/{VERSION}"));
-                return Ok(config);
+                return Ok((
+                    config,
+                    Input::build_aws_config(access_key, secret_key, region),
+                ));
             }
             (None, None, None) => {}
             (_, _, _) => {
@@ -135,9 +143,40 @@ impl Input {
 
         trace!("try to load api config from configuration file");
         let config_file = ConfigurationFile::load_default()?;
-        let mut config = config_file.configuration(profile_name)?;
+        let mut config = config_file.configuration(&profile_name)?;
         config.user_agent = Some(format!("osc-cost/{VERSION}"));
-        Ok(config)
+
+        Ok((
+            config,
+            Input::build_aws_config_from_file(&config_file, profile_name)?,
+        ))
+    }
+
+    fn build_aws_config(ak: String, sk: String, region: String) -> SdkConfig {
+        let cred = Credentials::from_keys(ak, sk, None);
+        // TODO: set Appname
+        aws_config::SdkConfig::builder()
+            .endpoint_url(format!("https://oos.{region}.outscale.com"))
+            .region(Region::new(region))
+            .credentials_provider(SharedCredentialsProvider::new(cred))
+            .build()
+    }
+
+    fn build_aws_config_from_file<S: Into<String>>(
+        config_file: &ConfigurationFile,
+        profile_name: S,
+    ) -> Result<SdkConfig, Box<dyn Error>> {
+        let profile_name = profile_name.into();
+        let profile = match config_file.0.get(&profile_name) {
+            Some(profile) => profile.clone(),
+            None => return Err(Box::new(ConfigurationFileError::ProfileNotFound)),
+        };
+
+        let region = profile.region.ok_or("No region for the profile")?;
+        let access_key = profile.access_key.ok_or("No AK for the profile")?;
+        let secret_key = profile.secret_key.ok_or("No SK for the profile")?;
+
+        Ok(Input::build_aws_config(access_key, secret_key, region))
     }
 
     pub fn fetch(&mut self) -> Result<(), Box<dyn error::Error>> {
