@@ -22,6 +22,7 @@ Read license for more details.
   - Load Balancer
   - Flexible GPU
   - VPN Connection
+  - Outscale Object Storage
 - Output formats:
   - Current cost per hour
   - Current cost per month

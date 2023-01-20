@@ -95,6 +95,7 @@ pub fn print_managed_resources_help() {
   - Microsoft Windows 10 E3 VDA License (0005)
   - Red Hat Enterprise Linux OS Distribution (0006)
   - sql server web (0007)
+- Outscale Object Storage
 "#
     );
 }
