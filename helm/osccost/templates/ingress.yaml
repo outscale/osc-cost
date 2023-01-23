@@ -1,0 +1,35 @@
+
+{{- if .Values.osccost.ingress.enable }}
+  {{ $root := . }}
+  {{- with .Values.osccost.ingress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    helm.sh/charts: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+    app.kubernetes.io/name: "{{ $root.Release.Name }}"
+    app.kubernetes.io/instance: "{{ template "osccost.fullname" $root }}"
+    app.kubernetes.io/version: "{{ $root.Chart.Version }}"
+    app.kubernetes.io/managed-by: Helm
+  name: {{ template "osccost.ingress" $root }}
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  {{- if .enableTls }}
+  tls:
+  - hosts:
+    - {{ .hostnameosccost }}
+    secretName: {{ .secretnameosccost  }}
+  {{- end }}
+  rules:
+  - host: {{ .hostnameosccost }}
+    http:
+      paths:
+      - path: /  
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ template "osccost.service" $root }}
+            port: 
+              number: 8080
+ {{- end }}
+{{- end }}

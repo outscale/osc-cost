@@ -33,3 +33,10 @@ integration-test: $(TARGET)
 reuse-test:
 	docker run --rm --volume $(PWD):/data fsfe/reuse:0.11.1 lint
 
+.PHONY: docker-build
+docker-build: # Build docker image with the manager 
+	DOCKER_BUILDKIT=1 docker build -f helm/Dockerfile -t ${IMG} .
+
+.PHONY: docker-push
+docker-push: ## Push docker image with the manager.
+	docker push ${IMG}

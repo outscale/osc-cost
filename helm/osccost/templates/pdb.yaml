@@ -1,0 +1,22 @@
+{{- if .Values.osccost.podDisruptionBudget.enable }}  
+  {{ $root := . }}
+  {{- with .Values.osccost.podDisruptionBudget }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/name: "{{ $root.Release.Name }}"
+    helm.sh/chart: {{ $root.Chart.Name }}-{{ $root.Chart.Version }}
+    app.kubernetes.io/managed-by: {{ $root.Release.Service }}
+    app.kubernetes.io/instance: {{ template "osccost.fullname" $root }}
+    app.kubernetes.io/part-of: {{ $root.Release.Name }}
+  name: {{ template "osccost.podDisruptionBudget" $root }}
+  namespace: {{ $root.Release.Namespace}}
+spec:
+  maxUnavailable: {{ .maxUnavailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "{{ $root.Release.Name }}"
+      app.kubernetes.io/instance: {{ template "osccost.fullname" $root }}
+  {{- end }}
+{{- end }}
