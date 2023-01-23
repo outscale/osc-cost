@@ -29,9 +29,7 @@ impl ResourceTrait for Vpn {
             None => Err(ResourceError::NotComputed),
         }
     }
-    fn gauge_hour(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_hour(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let vpn_gauge_hour_opts = Opts::new("vpn_price_hour", "Vpn price by hour")
             .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
             .const_label("account_id", self.account_id.as_ref().unwrap())
@@ -42,9 +40,7 @@ impl ResourceTrait for Vpn {
         vpn_gauge_hour
     }
 
-    fn gauge_month(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_month(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let vpn_gauge_month_opts = Opts::new("vpn_price_month", "Vpn price by month")
             .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
             .const_label("account_id", self.account_id.as_ref().unwrap())
@@ -70,5 +66,4 @@ impl ResourceMetricsTrait for VpnMetrics {
             .or_else(|e| Err(e))?;
         Ok(registry)
     }
-
 }

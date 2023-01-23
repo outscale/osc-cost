@@ -34,9 +34,7 @@ impl ResourceTrait for NatServices {
         self.price_per_month = Some(price_per_hour * HOURS_PER_MONTH);
         Ok(())
     }
-    fn gauge_hour(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_hour(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let nat_service_gauge_hour_opts =
             Opts::new("nat_service_price_hour", "NatService price by hour")
                 .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
@@ -49,9 +47,7 @@ impl ResourceTrait for NatServices {
         nat_service_gauge_hour
     }
 
-    fn gauge_month(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_month(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let nat_service_gauge_month_opts =
             Opts::new("nat_service_price_month", "NatService price by month")
                 .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
@@ -59,8 +55,8 @@ impl ResourceTrait for NatServices {
                 .const_label("region", self.region.as_ref().unwrap())
                 .const_label("resource_id", self.resource_id.as_ref().unwrap())
                 .const_label("resource_type", "NatService".to_string());
-        let nat_service_gauge_month = Gauge::with_opts(nat_service_gauge_month_opts)
-        .or_else(|e| Err(e));
+        let nat_service_gauge_month =
+            Gauge::with_opts(nat_service_gauge_month_opts).or_else(|e| Err(e));
         nat_service_gauge_month
     }
 }
@@ -74,12 +70,11 @@ impl ResourceMetricsTrait for NatServiceMetrics {
         registry
             .register(Box::new(self.nat_service_price_per_hours.clone()))
             .or_else(|e| Err(e))?;
-    
-         registry
+
+        registry
             .register(Box::new(self.nat_service_price_per_months.clone()))
             .or_else(|e| Err(e))?;
-        
+
         Ok(registry)
     }
-
 }

@@ -1,4 +1,3 @@
-
 use prometheus::{
     core::{AtomicF64, GenericGauge},
     Gauge, Opts, Registry,
@@ -39,9 +38,7 @@ impl ResourceTrait for Volume {
             None => Err(ResourceError::NotComputed),
         }
     }
-    fn gauge_hour(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_hour(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let volume_gauge_hour_opts = Opts::new("volume_price_hour", "Volume price by hour")
             .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
             .const_label("account_id", self.account_id.as_ref().unwrap())
@@ -52,9 +49,7 @@ impl ResourceTrait for Volume {
         volume_gauge_hour
     }
 
-    fn gauge_month(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_month(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let volume_gauge_month_opts = Opts::new("volume_price_month", "Volume price by month")
             .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
             .const_label("account_id", self.account_id.as_ref().unwrap())
@@ -81,5 +76,4 @@ impl ResourceMetricsTrait for VolumeMetrics {
             .or_else(|e| Err(e))?;
         Ok(registry)
     }
-
 }

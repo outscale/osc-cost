@@ -49,6 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             OutputFormat::Month => format!("{}", resources.cost_per_month()?),
             OutputFormat::Json => resources.json()?,
             OutputFormat::Csv => resources.csv()?,
+            OutputFormat::Prometheus => resources.prometheus()?,
         };
 
         match args.output {

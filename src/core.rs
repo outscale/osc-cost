@@ -185,7 +185,6 @@ impl Resources {
         for resource in &self.resources {
             match resource {
                 Resource::Vm(vm) => {
-
                     let vm_price_per_hours = match vm.gauge_hour() {
                         Ok(vm_price_per_hours) => vm_price_per_hours,
                         Err(e) => {
@@ -212,7 +211,6 @@ impl Resources {
                     vm_metrics.vm_price_per_months.add(price_per_month);
                 }
                 Resource::Volume(volume) => {
-  
                     let volume_price_per_hours = match volume.gauge_hour() {
                         Ok(volume_price_per_hours) => volume_price_per_hours,
                         Err(e) => {
@@ -234,7 +232,7 @@ impl Resources {
                     let price_per_hour = volume.price_per_hour.unwrap_or_default() as f64;
                     let price_per_month = volume.price_per_month.unwrap_or_default() as f64;
                     registry = volume_metrics.register(registry)?;
-     
+
                     volume_metrics.volume_price_per_hours.add(price_per_hour);
                     volume_metrics.volume_price_per_months.add(price_per_month);
                 }
@@ -261,13 +259,16 @@ impl Resources {
                     let price_per_hour = public_ip.price_per_hour.unwrap_or_default() as f64;
                     let price_per_month = public_ip.price_per_month.unwrap_or_default() as f64;
                     registry = public_ip_metrics.register(registry)?;
-                    public_ip_metrics.publicip_price_per_hours.add(price_per_hour);
-                    public_ip_metrics.publicip_price_per_months.add(price_per_month);
+                    public_ip_metrics
+                        .publicip_price_per_hours
+                        .add(price_per_hour);
+                    public_ip_metrics
+                        .publicip_price_per_months
+                        .add(price_per_month);
                 }
 
                 Resource::Snapshot(snapshot) => {
-
-                    let snapshot_price_per_hours = match snapshot.gauge_hour(                    ) {
+                    let snapshot_price_per_hours = match snapshot.gauge_hour() {
                         Ok(snapshot_price_per_hours) => snapshot_price_per_hours,
                         Err(e) => {
                             warn!("provide snapshot price hour: {}", e);
@@ -288,11 +289,14 @@ impl Resources {
                     let price_per_hour = snapshot.price_per_hour.unwrap_or_default() as f64;
                     let price_per_month = snapshot.price_per_month.unwrap_or_default() as f64;
                     registry = snapshot_metrics.register(registry)?;
-                    snapshot_metrics.snapshot_price_per_hours.add(price_per_hour);
-                    snapshot_metrics.snapshot_price_per_months.add(price_per_month);
+                    snapshot_metrics
+                        .snapshot_price_per_hours
+                        .add(price_per_hour);
+                    snapshot_metrics
+                        .snapshot_price_per_months
+                        .add(price_per_month);
                 }
                 Resource::NatServices(natservice) => {
-
                     let natservice_price_per_hours = match natservice.gauge_hour() {
                         Ok(natservice_price_per_hours) => natservice_price_per_hours,
                         Err(e) => {
@@ -314,11 +318,14 @@ impl Resources {
                     let price_per_hour = natservice.price_per_hour.unwrap_or_default() as f64;
                     let price_per_month = natservice.price_per_month.unwrap_or_default() as f64;
                     registry = natservice_metrics.register(registry)?;
-                    natservice_metrics.nat_service_price_per_hours.add(price_per_hour);
-                    natservice_metrics.nat_service_price_per_months.add(price_per_month);
+                    natservice_metrics
+                        .nat_service_price_per_hours
+                        .add(price_per_hour);
+                    natservice_metrics
+                        .nat_service_price_per_months
+                        .add(price_per_month);
                 }
                 Resource::Aggregate(aggregate) => {
-
                     let aggregate_price_per_hours = match aggregate.gauge_hour() {
                         Ok(aggregate_price_per_hours) => aggregate_price_per_hours,
                         Err(e) => {
@@ -342,7 +349,6 @@ impl Resources {
                     let price_per_month = aggregate.price_per_month.unwrap() as f64;
                     registry = aggregate_metrics.register(registry)?;
 
-                    
                     aggregate_metrics
                         .aggregate_price_per_hours
                         .add(price_per_hour);
@@ -351,7 +357,6 @@ impl Resources {
                         .add(price_per_month);
                 }
                 Resource::FlexibleGpu(flexible_gpu) => {
-
                     let flexible_gpu_price_per_hours = match flexible_gpu.gauge_hour() {
                         Ok(flexible_gpu_price_per_hours) => flexible_gpu_price_per_hours,
                         Err(e) => {
@@ -373,13 +378,14 @@ impl Resources {
                     let price_per_hour = flexible_gpu.price_per_hour.unwrap_or_default() as f64;
                     let price_per_month = flexible_gpu.price_per_month.unwrap_or_default() as f64;
                     registry = flexible_gpu_metrics.register(registry)?;
-                    flexible_gpu_metrics.flexible_gpu_price_per_hours.add(price_per_hour);
-                    flexible_gpu_metrics.flexible_gpu_price_per_months.add(price_per_month);
+                    flexible_gpu_metrics
+                        .flexible_gpu_price_per_hours
+                        .add(price_per_hour);
+                    flexible_gpu_metrics
+                        .flexible_gpu_price_per_months
+                        .add(price_per_month);
                 }
                 Resource::LoadBalancer(load_balancer) => {
-  
-
-
                     let load_balancer_price_per_hours = match load_balancer.gauge_hour() {
                         Ok(load_balancer_price_per_hours) => load_balancer_price_per_hours,
                         Err(e) => {
@@ -401,12 +407,14 @@ impl Resources {
                     let price_per_hour = load_balancer.price_per_hour.unwrap_or_default() as f64;
                     let price_per_month = load_balancer.price_per_month.unwrap_or_default() as f64;
                     registry = load_balancer_metrics.register(registry)?;
-                    load_balancer_metrics.load_balancer_price_per_hours.add(price_per_hour);
-                    load_balancer_metrics.load_balancer_price_per_months.add(price_per_month);
+                    load_balancer_metrics
+                        .load_balancer_price_per_hours
+                        .add(price_per_hour);
+                    load_balancer_metrics
+                        .load_balancer_price_per_months
+                        .add(price_per_month);
                 }
                 Resource::Vpn(vpn) => {
-
-
                     let vpn_price_per_hours = match vpn.gauge_hour() {
                         Ok(vpn_price_per_hours) => vpn_price_per_hours,
                         Err(e) => {
@@ -430,11 +438,8 @@ impl Resources {
                     registry = vpn_metrics.register(registry)?;
                     vpn_metrics.vpn_price_per_hours.add(price_per_hour);
                     vpn_metrics.vpn_price_per_months.add(price_per_month);
-                        
                 }
                 Resource::Oos(oos) => {
-     
-
                     let oos_price_per_hours = match oos.gauge_hour() {
                         Ok(vpn_price_per_hours) => vpn_price_per_hours,
                         Err(e) => {
@@ -462,7 +467,7 @@ impl Resources {
             }
         }
         Ok(registry)
-    }                               
+    }
     pub fn get_body(registry: Registry) -> Option<String> {
         let mut buffer = Vec::<u8>::new();
         let encoder = TextEncoder::new();
@@ -499,12 +504,8 @@ impl error::Error for ResourceError {}
 trait ResourceTrait {
     fn price_per_hour(&self) -> Result<f32, ResourceError>;
     fn compute(&mut self) -> Result<(), ResourceError>;
-    fn gauge_hour(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error>;
-    fn gauge_month(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error>;
+    fn gauge_hour(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error>;
+    fn gauge_month(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error>;
 }
 
 trait ResourceMetricsTrait {
@@ -533,9 +534,7 @@ impl ResourceTrait for Aggregate {
         Ok(())
     }
 
-    fn gauge_hour(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_hour(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let aggregate_gauge_hour_opts =
             Opts::new("aggregate_price_hour", "Aggregate price by hour")
                 .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
@@ -551,9 +550,7 @@ impl ResourceTrait for Aggregate {
         Ok(aggregate_gauge_hour)
     }
 
-    fn gauge_month(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_month(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let aggregate_gauge_month_opts =
             Opts::new("aggregate_price_month", "Aggregate price by month")
                 .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
@@ -674,5 +671,3 @@ impl ResourceMetricsTrait for AggregateMetrics {
         Ok(registry)
     }
 }
-
-

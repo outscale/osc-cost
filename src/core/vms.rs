@@ -52,9 +52,7 @@ impl ResourceTrait for Vm {
         }
     }
 
-    fn gauge_hour(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_hour(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let vm_gauge_hour_opts = Opts::new("vm_price_hour", "Vm price by hour")
             .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
             .const_label("account_id", self.account_id.as_ref().unwrap())
@@ -65,9 +63,7 @@ impl ResourceTrait for Vm {
         vm_gauge_hour
     }
 
-    fn gauge_month(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_month(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let vm_gauge_month_opts = Opts::new("vm_price_month", "Vm price by month")
             .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
             .const_label("account_id", self.account_id.as_ref().unwrap())

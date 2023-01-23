@@ -43,9 +43,7 @@ impl ResourceTrait for PublicIp {
             None => Err(ResourceError::NotComputed),
         }
     }
-    fn gauge_hour(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_hour(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let public_ip_gauge_hour_opts =
             Opts::new("public_ip_price_hour", "Public Ip price by hour")
                 .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
@@ -61,9 +59,7 @@ impl ResourceTrait for PublicIp {
         Ok(public_ip_gauge_hour)
     }
 
-    fn gauge_month(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_month(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let public_ip_gauge_month_opts =
             Opts::new("public_ip_price_month", "Public Ip price by month")
                 .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
@@ -94,5 +90,4 @@ impl ResourceMetricsTrait for PublicIpMetrics {
             .or_else(|e| Err(e))?;
         Ok(registry)
     }
-
 }

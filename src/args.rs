@@ -49,6 +49,7 @@ pub enum OutputFormat {
     Month,
     Json,
     Csv,
+    Prometheus,
 }
 
 impl Args {
@@ -71,6 +72,7 @@ impl Args {
             (false, _) => 0,
             (true, OutputFormat::Json) => 0,
             (true, OutputFormat::Csv) => 0,
+            (true, OutputFormat::Prometheus) => 0,
             (true, OutputFormat::Hour) => {
                 error!("cannot aggregate with hour format");
                 1

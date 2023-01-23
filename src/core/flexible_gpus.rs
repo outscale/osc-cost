@@ -30,9 +30,7 @@ impl ResourceTrait for FlexibleGpu {
             None => Err(ResourceError::NotComputed),
         }
     }
-    fn gauge_hour(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_hour(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let flexible_gpu_gauge_hour_opts =
             Opts::new("flexible_gpu_price_hour", "Flexibe gpu price by hour")
                 .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
@@ -40,14 +38,12 @@ impl ResourceTrait for FlexibleGpu {
                 .const_label("region", self.region.as_ref().unwrap())
                 .const_label("resource_id", self.resource_id.as_ref().unwrap())
                 .const_label("resource_type", "FlexibleGpu".to_string());
-                let flexible_gpu_gauge_hour = Gauge::with_opts(flexible_gpu_gauge_hour_opts)
-                .or_else(|e| Err(e));
-                flexible_gpu_gauge_hour
+        let flexible_gpu_gauge_hour =
+            Gauge::with_opts(flexible_gpu_gauge_hour_opts).or_else(|e| Err(e));
+        flexible_gpu_gauge_hour
     }
 
-    fn gauge_month(
-        &self,
-    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+    fn gauge_month(&self) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
         let flexible_gpu_gauge_month_opts =
             Opts::new("flexible_gpu_price_month", "Flexible gpu price by month")
                 .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
@@ -55,8 +51,8 @@ impl ResourceTrait for FlexibleGpu {
                 .const_label("region", self.region.as_ref().unwrap())
                 .const_label("resource_id", self.resource_id.as_ref().unwrap())
                 .const_label("resource_type", "FlexibleGpu".to_string());
-        let flexible_gpu_gauge_month = Gauge::with_opts(flexible_gpu_gauge_month_opts)
-        .or_else(|e| Err(e));
+        let flexible_gpu_gauge_month =
+            Gauge::with_opts(flexible_gpu_gauge_month_opts).or_else(|e| Err(e));
         flexible_gpu_gauge_month
     }
 }
@@ -67,10 +63,10 @@ pub struct FlexibleGpuMetrics {
 }
 impl ResourceMetricsTrait for FlexibleGpuMetrics {
     fn register(&self, registry: Registry) -> Result<Registry, prometheus::Error> {
-         registry
+        registry
             .register(Box::new(self.flexible_gpu_price_per_hours.clone()))
             .or_else(|e| Err(e))?;
-     registry
+        registry
             .register(Box::new(self.flexible_gpu_price_per_months.clone()))
             .or_else(|e| Err(e))?;
         Ok(registry)
