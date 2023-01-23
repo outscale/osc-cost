@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2023 Outscale SAS
+# SPDX-License-Identifier: BSD-3-Clause
+
+Thank you for installing {{ .Chart.Name }}
+
+Your release is name {{ .Release.Name }}
+
+To learn more about this release, try:
+  $ helm status {{ .Release.Name }}
+  $ helm get {{ .Release.Name }}

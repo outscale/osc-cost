@@ -1,0 +1,95 @@
+{{- if .Values.osccost.deployment.enable }}
+  {{ $root := . }}
+  {{- with .Values.osccost.deployment }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ template "osccost.deployment" $root }}"
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    helm.sh/charts: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+    app.kubernetes.io/name:  "{{ $root.Release.Name }}"
+    app.kubernetes.io/instance:  "{{ template "osccost.fullname" $root }}"
+    app.kubernetes.io/version: "{{ $root.Chart.Version }}"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: {{ .repliaccount | default "1" }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "{{ $root.Release.Name }}"
+      app.kubernetes.io/instance:  "{{ template "osccost.fullname" $root }}"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "{{ $root.Release.Name }}"
+        app.kubernetes.io/instance:  "{{ template "osccost.fullname" $root }}"
+    spec:
+      serviceAccountName: {{ template "osccost.serviceAccount" $root }}
+      automountServiceAccountToken: true
+      containers:
+        - name: osc-cost
+          image: "{{ .containers.image }}:{{ .containers.imageTag }}"
+          imagePullPolicy: Always
+          env:
+            - name: OSC_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "osccost.secret" $root }}
+                  key: OSC_ACCESS_KEY
+            - name: OSC_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "osccost.secret" $root }}
+                  key: OSC_SECRET_KEY
+            - name: OSC_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "osccost.secret" $root }}
+                  key: OSC_REGION
+          ports:
+            - name: http-metrics
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 10
+            timeoutSeconds: 10
+            exec:
+              command:
+              - /usr/local/bin/osc-cost 
+          readinessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 10
+            timeoutSeconds: 10
+            exec:
+              command:
+              - /usr/local/bin/osc-cost
+        {{- if.containers.resources }}
+          resources:
+            requests:
+              memory: {{ .containers.resources.memory.requests | default "600Mi" | quote }}
+              cpu: {{ .containers.resources.cpu.requests | default "300m" | quote }}
+              ephemeral-storage: {{ .containers.resources.ephemeralstorage.requests | default "300m" | quote }}
+
+            limits:
+              memory: {{ .containers.resources.memory.limits | default "900Mi" | quote }}
+              cpu: {{ .containers.resources.cpu.limits | default "600m" | quote }}
+              ephemeral-storage: {{ .containers.resources.ephemeralstorage.limits | default "200Mi" | quote }}
+        {{- end }}
+        {{- if .containers.securityContext }}
+          securityContext:
+          {{- range $key, $val := .containers.securityContext }}
+            {{ $key }}: {{ $val }}
+          {{- end }}
+        {{- end }}
+      imagePullSecrets:
+      - name: {{ .registry_credential | default "regcred" }}
+  {{- end }}
+{{- end }}
+
+        
+    

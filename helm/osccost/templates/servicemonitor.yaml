@@ -1,0 +1,28 @@
+{{- if .Values.osccost.serviceMonitor.enable }}
+  {{ $root := . }}
+  {{- with .Values.osccost.serviceMonitor.enable }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "{{ template "osccost.serviceMonitor" $root }}"
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    helm.sh/charts: "{{ $root.Chart.Name }}-{{ $root.Chart.Version }}"
+    app.kubernetes.io/name: "{{ $root.Release.Name }}"
+    app.kubernetes.io/instance: "{{ template "osccost.fullname" $root }}"
+    app.kubernetes.io/version: "{{ $root.Chart.Version }}"
+    app.kubernetes.io/managed-by: Helm
+    release: kube-prometheus-stack
+spec:
+  endpoints:
+    - honorLabels: true
+      targetPort: http-metrics
+  namespaceSelector:
+    matchNames:
+      - {{ $root.Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "{{ $root.Release.Name }}"
+      app.kubernetes.io/instance: "{{ template "osccost.fullname" $root }}"
+  {{- end }}
+{{- end }}

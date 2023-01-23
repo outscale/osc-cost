@@ -1,0 +1,68 @@
+osccost:
+  service:
+    # -- enable service
+    enable: True
+  serviceMonitor:
+     # -- enable serviceMonitor 
+    enable: True    
+  serviceAccount:
+    # -- enable serviceAccount
+    enable: True
+  ingress:
+    # -- enable ingress
+    enable: True
+    # -- Add hostname
+    hostnameosccost: osc-cost.outscale.com
+  secret:
+    # -- enable secret
+    enable: True
+    # -- Outscale Access Key
+    oscAccessKey: myAccessKey
+    # -- Outscale Secret Key
+    oscSecretKey: mySecretKey
+    # -- Outscale Region
+    oscRegion: myRegion
+  podDisruptionBudget:
+    # -- enable podDisruptionBudget
+    enable: True
+    # -- Max unavailable pod
+    maxUnavailable: 1
+  deployment:
+    # -- enable deployment
+    enable: True
+    containers:
+    # -- Outscale provider image
+      image: outscale/osc-cost
+    # -- Outscale provider image tag
+      imageTag: "v0.1.0"
+    # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
+      pullPolicy: Always
+    # -- Additional securityContext to add
+      securityContext:
+    # -- Allow or denied Privilege escalation
+        allowPrivilegeEscalation: false
+    # -- Run as user
+        runAsUser: 65535
+    # -- Run as group
+        runAsGroup: 65535
+    # -- Set read only rootfs
+        readOnlyRootFilesystem: false
+    # -- Manage resource
+      resources:
+        memory:
+    # -- Container memory requests
+          requests: 600Mi
+    # -- Container memory limits
+          limits: 900Mi
+    # -- Container memory limits
+        cpu:
+    # -- Container cpu requests
+          requests: 300m
+    # -- Container cpu limts
+          limits: 600m
+        ephemeralstorage:
+    # -- Container ephemeralstorage requests
+          requests: 100Mi
+    # -- Container ephemeralstorage limts
+          limits: 200Mi
+
