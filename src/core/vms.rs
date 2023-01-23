@@ -1,6 +1,9 @@
+use super::{ResourceError, ResourceMetricsTrait, ResourceTrait, HOURS_PER_MONTH};
+use prometheus::{
+    core::{AtomicF64, GenericGauge},
+    Gauge, Opts, Registry,
+};
 use serde::{Deserialize, Serialize};
-
-use super::{ResourceError, ResourceTrait, HOURS_PER_MONTH};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Vm {
@@ -47,5 +50,47 @@ impl ResourceTrait for Vm {
             Some(price) => Ok(price),
             None => Err(ResourceError::NotComputed),
         }
+    }
+
+    fn gauge_hour(
+        &self,
+    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+        let vm_gauge_hour_opts = Opts::new("vm_price_hour", "Vm price by hour")
+            .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
+            .const_label("account_id", self.account_id.as_ref().unwrap())
+            .const_label("region", self.region.as_ref().unwrap())
+            .const_label("resource_id", self.resource_id.as_ref().unwrap())
+            .const_label("resource_type", "Vm".to_string());
+        let vm_gauge_hour = Gauge::with_opts(vm_gauge_hour_opts).or_else(|e| Err(e));
+        vm_gauge_hour
+    }
+
+    fn gauge_month(
+        &self,
+    ) -> Result<GenericGauge<AtomicF64>, prometheus::Error> {
+        let vm_gauge_month_opts = Opts::new("vm_price_month", "Vm price by month")
+            .const_label("osc_cost_version", self.osc_cost_version.as_ref().unwrap())
+            .const_label("account_id", self.account_id.as_ref().unwrap())
+            .const_label("region", self.region.as_ref().unwrap())
+            .const_label("resource_id", self.resource_id.as_ref().unwrap())
+            .const_label("resource_type", "Vm".to_string());
+        let vm_gauge_month = Gauge::with_opts(vm_gauge_month_opts).or_else(|e| Err(e));
+        vm_gauge_month
+    }
+}
+
+pub struct VmMetrics {
+    pub vm_price_per_hours: GenericGauge<AtomicF64>,
+    pub vm_price_per_months: GenericGauge<AtomicF64>,
+}
+impl ResourceMetricsTrait for VmMetrics {
+    fn register(&self, registry: Registry) -> Result<Registry, prometheus::Error> {
+        registry
+            .register(Box::new(self.vm_price_per_hours.clone()))
+            .or_else(|e| Err(e))?;
+        registry
+            .register(Box::new(self.vm_price_per_months.clone()))
+            .or_else(|e| Err(e))?;
+        Ok(registry)
     }
 }
