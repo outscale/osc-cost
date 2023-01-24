@@ -1,4 +1,8 @@
 TARGET=target/x86_64-unknown-linux-musl/release/osc-cost
+REGISTRY ?= outscale
+IMAGE_NAME ?= osc-cost
+TAG ?= DEV
+IMG ?= $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 
 all: help
 
