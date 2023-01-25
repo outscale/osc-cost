@@ -26,3 +26,5 @@ aws-credential-types = { version = "0.53.0", features = ["hardcoded-credentials"
 aws-config = "0.53.0"
 aws-sdk-s3 = "0.23.0"
 tokio = { version = "1", features = ["full"] }
+icu_locid = "1.0.0"
+spreadsheet-ods = "0.15.0"
