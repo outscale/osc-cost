@@ -49,6 +49,7 @@ pub enum OutputFormat {
     Month,
     Json,
     Csv,
+    Ods,
 }
 
 impl Args {
@@ -71,6 +72,7 @@ impl Args {
             (false, _) => 0,
             (true, OutputFormat::Json) => 0,
             (true, OutputFormat::Csv) => 0,
+            (true, OutputFormat::Ods) => 0,
             (true, OutputFormat::Hour) => {
                 error!("cannot aggregate with hour format");
                 1
@@ -79,6 +81,14 @@ impl Args {
                 error!("cannot aggregate with month format");
                 1
             }
+        };
+        err_count += match (&self.output, &self.format) {
+            (Some(_), _) => 0,
+            (None, OutputFormat::Ods) => {
+                error!("cannot print ods to the standard output");
+                1
+            }
+            _ => 0,
         };
         if err_count > 0 {
             return None;

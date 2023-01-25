@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use std::error;
 use std::fmt;
 
+use crate::ods::ser::to_bytes;
+
 use self::flexible_gpus::FlexibleGpu;
 use self::load_balancers::LoadBalancer;
 use self::nat_services::NatServices;
@@ -162,6 +164,10 @@ impl Resources {
         }
         let output = String::from_utf8(csv_writer.into_inner()?)?;
         Ok(output)
+    }
+
+    pub fn ods(&self) -> crate::ods::error::Result<Vec<u8>> {
+        to_bytes(&self.resources)
     }
 }
 
