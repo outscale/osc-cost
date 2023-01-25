@@ -10,6 +10,7 @@ use std::process::exit;
 mod args;
 mod core;
 mod oapi;
+mod ods;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -44,11 +45,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             resources = resources.aggregate();
         }
 
-        let output = match args.format {
-            OutputFormat::Hour => format!("{}", resources.cost_per_hour()?),
-            OutputFormat::Month => format!("{}", resources.cost_per_month()?),
-            OutputFormat::Json => resources.json()?,
-            OutputFormat::Csv => resources.csv()?,
+        let output: Vec<u8> = match args.format {
+            OutputFormat::Hour => format!("{}", resources.cost_per_hour()?).into_bytes(),
+            OutputFormat::Month => format!("{}", resources.cost_per_month()?).into_bytes(),
+            OutputFormat::Json => resources.json()?.into_bytes(),
+            OutputFormat::Csv => resources.csv()?.into_bytes(),
+            OutputFormat::Ods => resources.ods()?,
         };
 
         match args.output {
@@ -59,20 +61,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                 });
             }
             None => {
-                println!("{}", output);
+                println!("{}", String::from_utf8_lossy(&output));
             }
         }
     }
     Ok(())
 }
 
-fn write_to_file(file_path: &str, data: String) -> Result<(), Box<dyn error::Error>> {
+fn write_to_file(file_path: &str, data: Vec<u8>) -> Result<(), Box<dyn error::Error>> {
     let path = Path::new(file_path);
     let parent = path.parent().unwrap();
 
     fs::create_dir_all(parent).unwrap();
     let mut file = File::create(file_path)?;
-    file.write_all(data.as_bytes()).unwrap();
+    file.write_all(&data).unwrap();
 
     Ok(())
 }
