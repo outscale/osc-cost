@@ -51,6 +51,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             OutputFormat::Json => resources.json()?.into_bytes(),
             OutputFormat::Csv => resources.csv()?.into_bytes(),
             OutputFormat::Ods => resources.ods()?,
+            OutputFormat::Human => resources.aggregate().human()?.into_bytes(),
         };
 
         match args.output {
