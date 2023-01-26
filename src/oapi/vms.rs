@@ -177,9 +177,9 @@ impl Input {
                 // Mandatory to compute price for BoxUsage (aws-type, etc) types
                 price_box_per_hour: specs.price_box_per_hour,
                 // Mandatory to compute price for all vm types
-                price_product_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
-                price_product_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
-                price_product_per_vm_per_hour: specs.price_product_per_vm_per_hour,
+                price_license_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
+                price_license_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
+                price_license_per_vm_per_hour: specs.price_product_per_vm_per_hour,
             };
             resources.resources.push(Resource::Vm(core_vm));
         }
