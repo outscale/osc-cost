@@ -26,6 +26,7 @@ pub struct Vm {
     pub price_license_per_ram_gb_per_hour: f32,
     pub price_license_per_cpu_per_hour: f32,
     pub price_license_per_vm_per_hour: f32,
+    pub license_codes: String,
 }
 
 impl ResourceTrait for Vm {
