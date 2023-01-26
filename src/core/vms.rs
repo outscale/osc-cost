@@ -23,9 +23,9 @@ pub struct Vm {
     // Mandatory to compute price for BoxUsage (aws-type, etc) types
     pub price_box_per_hour: f32,
     // Mandatory to compute price for all vm types
-    pub price_product_per_ram_gb_per_hour: f32,
-    pub price_product_per_cpu_per_hour: f32,
-    pub price_product_per_vm_per_hour: f32,
+    pub price_license_per_ram_gb_per_hour: f32,
+    pub price_license_per_cpu_per_hour: f32,
+    pub price_license_per_vm_per_hour: f32,
 }
 
 impl ResourceTrait for Vm {
@@ -33,9 +33,9 @@ impl ResourceTrait for Vm {
         let mut price_per_hour = 0_f32;
         price_per_hour += (self.vm_vcpu as f32) * self.price_vcpu_per_hour;
         price_per_hour += (self.vm_ram_gb as f32) * self.price_ram_gb_per_hour;
-        price_per_hour += (self.vm_vcpu as f32) * self.price_product_per_cpu_per_hour;
-        price_per_hour += (self.vm_ram_gb as f32) * self.price_product_per_ram_gb_per_hour;
-        price_per_hour += self.price_product_per_vm_per_hour;
+        price_per_hour += (self.vm_vcpu as f32) * self.price_license_per_cpu_per_hour;
+        price_per_hour += (self.vm_ram_gb as f32) * self.price_license_per_ram_gb_per_hour;
+        price_per_hour += self.price_license_per_vm_per_hour;
         price_per_hour += self.price_box_per_hour;
         self.price_per_hour = Some(price_per_hour);
         self.price_per_month = Some(price_per_hour * HOURS_PER_MONTH);
