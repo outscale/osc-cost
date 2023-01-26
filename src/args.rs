@@ -23,7 +23,7 @@ pub struct Args {
     pub profile: String,
     #[arg(value_enum, long)]
     pub source: Option<InputSource>,
-    #[arg(value_enum, long, default_value_t = OutputFormat::Hour)]
+    #[arg(value_enum, long, default_value_t = OutputFormat::Human)]
     pub format: OutputFormat,
     #[arg(long, short = 'o')]
     pub output: Option<String>,
@@ -50,6 +50,7 @@ pub enum OutputFormat {
     Json,
     Csv,
     Ods,
+    Human,
 }
 
 impl Args {
@@ -71,6 +72,7 @@ impl Args {
         err_count += match (&self.aggregate, &self.format) {
             (false, _) => 0,
             (true, OutputFormat::Json) => 0,
+            (true, OutputFormat::Human) => 0,
             (true, OutputFormat::Csv) => 0,
             (true, OutputFormat::Ods) => 0,
             (true, OutputFormat::Hour) => {
