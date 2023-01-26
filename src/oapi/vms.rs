@@ -180,6 +180,7 @@ impl Input {
                 price_license_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
                 price_license_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
                 price_license_per_vm_per_hour: specs.price_product_per_vm_per_hour,
+                license_codes: specs.product_codes.join(","),
             };
             resources.resources.push(Resource::Vm(core_vm));
         }
