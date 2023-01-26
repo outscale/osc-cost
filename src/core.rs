@@ -82,6 +82,8 @@ impl Resources {
                     Some(price) => Some(price + aggregate.price_per_month.unwrap_or(0.0)),
                     None => aggregate.price_per_month,
                 };
+
+                cache.count += aggregate.count;
             } else {
                 resource_aggregate.insert(aggregate.aggregated_resource_type.clone(), aggregate);
             }
@@ -200,6 +202,7 @@ pub struct Aggregate {
     pub price_per_hour: Option<f32>,
     pub price_per_month: Option<f32>,
     pub aggregated_resource_type: String,
+    pub count: i32,
 }
 
 impl ResourceTrait for Aggregate {
@@ -226,6 +229,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: vm.price_per_hour,
                 price_per_month: vm.price_per_month,
                 aggregated_resource_type: "Vm".to_string(),
+                count: 1,
             },
             Resource::Volume(volume) => Aggregate {
                 osc_cost_version: volume.osc_cost_version,
@@ -235,6 +239,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: volume.price_per_hour,
                 price_per_month: volume.price_per_month,
                 aggregated_resource_type: "Volume".to_string(),
+                count: 1,
             },
             Resource::PublicIp(public_ip) => Aggregate {
                 osc_cost_version: public_ip.osc_cost_version,
@@ -244,6 +249,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: public_ip.price_per_hour,
                 price_per_month: public_ip.price_per_month,
                 aggregated_resource_type: "PublicIp".to_string(),
+                count: 1,
             },
             Resource::Snapshot(snapshot) => Aggregate {
                 osc_cost_version: snapshot.osc_cost_version,
@@ -253,6 +259,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: snapshot.price_per_hour,
                 price_per_month: snapshot.price_per_month,
                 aggregated_resource_type: "Snapshot".to_string(),
+                count: 1,
             },
             Resource::NatServices(nat_service) => Aggregate {
                 osc_cost_version: nat_service.osc_cost_version,
@@ -262,6 +269,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: nat_service.price_per_hour,
                 price_per_month: nat_service.price_per_month,
                 aggregated_resource_type: "NatServices".to_string(),
+                count: 1,
             },
             Resource::Aggregate(aggregate) => aggregate,
             Resource::FlexibleGpu(flexible_gpu) => Aggregate {
@@ -272,6 +280,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: flexible_gpu.price_per_hour,
                 price_per_month: flexible_gpu.price_per_month,
                 aggregated_resource_type: "FlexibleGpu".to_string(),
+                count: 1,
             },
             Resource::LoadBalancer(load_balancer) => Aggregate {
                 osc_cost_version: load_balancer.osc_cost_version,
@@ -281,6 +290,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: load_balancer.price_per_hour,
                 price_per_month: load_balancer.price_per_month,
                 aggregated_resource_type: "LoadBalancer".to_string(),
+                count: 1,
             },
             Resource::Vpn(resource) => Aggregate {
                 osc_cost_version: resource.osc_cost_version,
@@ -290,6 +300,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: resource.price_per_hour,
                 price_per_month: resource.price_per_month,
                 aggregated_resource_type: "Vpn".to_string(),
+                count: 1,
             },
             Resource::Oos(resource) => Aggregate {
                 osc_cost_version: resource.osc_cost_version,
@@ -299,6 +310,7 @@ impl From<Resource> for Aggregate {
                 price_per_hour: resource.price_per_hour,
                 price_per_month: resource.price_per_month,
                 aggregated_resource_type: "Oos".to_string(),
+                count: 1,
             },
         }
     }
