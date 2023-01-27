@@ -27,6 +27,8 @@ jobs:
           components: rustfmt, clippy
       - name: Check code format
         run: make format-test
+        env:
+          RUSTFLAGS: "-Dwarnings"
   cargo-test:
     environment: eu-west-2
     runs-on: ubuntu-20.04
