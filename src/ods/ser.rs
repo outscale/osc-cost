@@ -193,7 +193,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     // name in most formats.
     fn serialize_unit_struct(self, name: &'static str) -> Result<()> {
         Err(Error::UnsupportedValue {
-            kind: format!("Unit Struct ({})", name),
+            kind: format!("Unit Struct ({name})"),
         })
     }
 
@@ -208,7 +208,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         variant: &'static str,
     ) -> Result<()> {
         Err(Error::UnsupportedValue {
-            kind: format!("Unit Variant ({}::{})", name, variant),
+            kind: format!("Unit Variant ({name}::{variant})"),
         })
     }
 
@@ -270,7 +270,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         _len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
         Err(Error::UnsupportedValue {
-            kind: format!("Tuple Struct ({})", name),
+            kind: format!("Tuple Struct ({name})"),
         })
     }
 
@@ -284,7 +284,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
         Err(Error::UnsupportedValue {
-            kind: format!("Tuple Variant ({}::{})", name, variant),
+            kind: format!("Tuple Variant ({name}::{variant})"),
         })
     }
 
@@ -343,7 +343,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
         Err(Error::UnsupportedValue {
-            kind: format!("Struct Variant ({}::{})", name, variant),
+            kind: format!("Struct Variant ({name}::{variant})"),
         })
     }
 }

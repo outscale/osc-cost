@@ -18,7 +18,7 @@ pub struct Oos {
 impl ResourceTrait for Oos {
     fn compute(&mut self) -> Result<(), ResourceError> {
         let mut price_per_month = 0_f32;
-        price_per_month += (self.size_gb.unwrap() as f32) * self.price_gb_per_month;
+        price_per_month += self.size_gb.unwrap() * self.price_gb_per_month;
         self.price_per_hour = Some(price_per_month / HOURS_PER_MONTH);
         self.price_per_month = Some(price_per_month);
         Ok(())
