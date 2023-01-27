@@ -119,7 +119,7 @@ impl Input {
         match (ak_env, sk_env, region_env) {
             (Some(access_key), Some(secret_key), Some(region)) => {
                 let mut config = Configuration::new();
-                config.base_path = format!("https://api.{}.outscale.com/api/v1", region);
+                config.base_path = format!("https://api.{region}.outscale.com/api/v1");
                 config.aws_v4_key = Some(AWSv4Key {
                     region: region.clone(),
                     access_key: access_key.clone(),
@@ -245,7 +245,7 @@ impl Input {
                     continue;
                 }
             };
-            let entry_id = format!("{}/{}/{}", service, _type, operation);
+            let entry_id = format!("{service}/{_type}/{operation}");
             self.catalog.insert(entry_id, entry);
         }
 

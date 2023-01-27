@@ -32,7 +32,7 @@ impl ser::Error for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::Message(msg) => write!(f, "{}", msg),
+            Error::Message(msg) => write!(f, "{msg}"),
             Error::ExpectedStartStruct => {
                 f.write_str("unexpected value type to start serialization")
             }
@@ -40,8 +40,7 @@ impl Display for Error {
                 f.write_str("expect an end of the struct before starting new one")
             }
             Error::UnsupportedValue { kind } => f.write_str(&format!(
-                "unsupported value encountered while serializing: {}",
-                kind
+                "unsupported value encountered while serializing: {kind}"
             )),
         }
     }

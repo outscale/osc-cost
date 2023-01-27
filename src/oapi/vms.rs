@@ -257,7 +257,7 @@ impl VmSpecs {
 
     fn parse_product_price(mut self, input: &Input) -> Option<VmSpecs> {
         for product_code in &self.product_codes {
-            let Some(price) = input.catalog_entry("TinaOS-FCU", "ProductUsage", &format!("RunInstances-{}-OD", product_code)) else {
+            let Some(price) = input.catalog_entry("TinaOS-FCU", "ProductUsage", &format!("RunInstances-{product_code}-OD")) else {
                 continue;
             };
             // License calculation is specific to each product code.
