@@ -51,6 +51,7 @@ pub enum OutputFormat {
     Csv,
     Ods,
     Human,
+    Prometheus,
 }
 
 impl Args {
@@ -75,6 +76,7 @@ impl Args {
             (true, OutputFormat::Human) => 0,
             (true, OutputFormat::Csv) => 0,
             (true, OutputFormat::Ods) => 0,
+            (true, OutputFormat::Prometheus) => 0,
             (true, OutputFormat::Hour) => {
                 error!("cannot aggregate with hour format");
                 1
