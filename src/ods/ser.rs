@@ -311,7 +311,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
             sheet = self
                 .sheets
                 .get_mut(_name)
-                .ok_or(Error::Message("Internal error".to_string()))?
+                .ok_or_else(|| Error::Message("Internal error".to_string()))?
                 .to_owned();
             to_init = false;
         } else {
