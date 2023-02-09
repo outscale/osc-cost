@@ -149,6 +149,10 @@ impl Resources {
         Ok(self.cost_per_hour()? * HOURS_PER_MONTH)
     }
 
+    pub fn cost_per_year(&self) -> Result<f32, ResourceError> {
+        Ok(self.cost_per_hour()? * HOURS_PER_MONTH * 12.0)
+    }
+
     pub fn json(&self) -> serde_json::Result<String> {
         let mut out = String::new();
         for resource in &self.resources {
