@@ -47,6 +47,7 @@ pub enum InputSource {
 pub enum OutputFormat {
     Hour,
     Month,
+    Year,
     Json,
     Csv,
     Ods,
@@ -81,6 +82,10 @@ impl Args {
             }
             (true, OutputFormat::Month) => {
                 error!("cannot aggregate with month format");
+                1
+            }
+            (true, OutputFormat::Year) => {
+                error!("cannot aggregate with annual format");
                 1
             }
         };

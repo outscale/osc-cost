@@ -48,6 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let output: Vec<u8> = match args.format {
             OutputFormat::Hour => format!("{}", resources.cost_per_hour()?).into_bytes(),
             OutputFormat::Month => format!("{}", resources.cost_per_month()?).into_bytes(),
+            OutputFormat::Year => format!("{}", resources.cost_per_year()?).into_bytes(),
             OutputFormat::Json => resources.json()?.into_bytes(),
             OutputFormat::Csv => resources.csv()?.into_bytes(),
             OutputFormat::Ods => resources.ods()?,
