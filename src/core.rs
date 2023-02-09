@@ -169,15 +169,6 @@ impl Resources {
         Ok(out)
     }
 
-    pub fn csv(&self) -> Result<String, Box<dyn error::Error>> {
-        let mut csv_writer = csv::WriterBuilder::new().flexible(true).from_writer(vec![]);
-        for resource in &self.resources {
-            csv_writer.serialize(resource)?;
-        }
-        let output = String::from_utf8(csv_writer.into_inner()?)?;
-        Ok(output)
-    }
-
     pub fn ods(&self) -> crate::ods::error::Result<Vec<u8>> {
         to_bytes(&self.resources)
     }

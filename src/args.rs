@@ -49,7 +49,6 @@ pub enum OutputFormat {
     Month,
     Year,
     Json,
-    Csv,
     Ods,
     Human,
     Prometheus,
@@ -75,7 +74,6 @@ impl Args {
             (false, _) => 0,
             (true, OutputFormat::Json) => 0,
             (true, OutputFormat::Human) => 0,
-            (true, OutputFormat::Csv) => 0,
             (true, OutputFormat::Ods) => 0,
             (true, OutputFormat::Prometheus) => 0,
             (true, OutputFormat::Hour) => {

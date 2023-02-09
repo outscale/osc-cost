@@ -27,7 +27,6 @@ Read license for more details.
   - Current cost per hour
   - Current cost per month
   - Json (line-delimited JSON document)
-  - CSV
   - Human
 
 🚨 Warning: snapshot computation is currently known to be over-priced.
@@ -95,13 +94,6 @@ osc-cost --format=hour
 ```
 osc-cost --format=month
 150.91
-```
-
-```
-osc-cost --format=csv
-resource_type,osc_cost_version,account_id,read_date_rfc3339,region,resource_id,price_per_hour,price_per_month,vm_type,vm_vcpu_gen,vm_core_performance,vm_image,vm_vcpu,vm_ram_gb,price_vcpu_per_hour,price_ram_gb_per_hour,price_box_per_hour,price_product_per_ram_gb_per_hour,price_product_per_cpu_per_hour,price_product_per_vm_per_hour
-Vm,0.1.0,509075394552,2022-11-24T11:14:31.605623096+00:00,eu-west-2,i-682fc9e7,0.044999998,32.85,tinav5.c1r1p1,5,highest,ami-bb490c7e,1,1,0.04,0.005,0.0,0.0,0.0,0.0
-...
 ```
 
 ```
