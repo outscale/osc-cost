@@ -13,7 +13,6 @@ readme = "docs/README.md"
 [dependencies]
 chrono = "0.4.22"
 clap = { version = "4.0.18", features = ["derive"] }
-csv = "1.1.6"
 env_logger = "0.9.3"
 http = "0.1.21"
 lazy_static = "1.4.0"
