@@ -13,6 +13,10 @@ osccost:
     enable: True
     # -- Add hostname
     hostnameosccost: osc-cost.outscale.com
+    # -- Add hostname
+    secretnameosccost: cert-osc-cost
+    # -- enable Tls
+    enableTls: False
   secret:
     # -- enable secret
     enable: True
@@ -34,7 +38,7 @@ osccost:
     # -- Outscale provider image
       image: outscale/osc-cost
     # -- Outscale provider image tag
-      imageTag: "v0.1.0"
+      imageTag: "v0.2.0"
     # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
       pullPolicy: Always
     # -- Additional securityContext to add

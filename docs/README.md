@@ -108,6 +108,17 @@ osc-cost --format=json
 
 Check [contributing documentation](CONTRIBUTING.md).
 
+# Release
+
+1. Update chart version (if necessary) in helm/osccost/Chart.yaml and osccost version in helm/osccost/values.yaml
+
+2. Tag the release
+```
+git tag -a vX.X.X -m "vX.X.X"
+```
+
+3. Make the release on Github
+
 # License
 
 > Copyright Outscale SAS
