@@ -9,7 +9,7 @@ Some events may trigger a major (breaking) version like option deprecation or ma
 osc-cost's code is organized in order to have:
 - a choosen input (Outscale API, json, ...)
 - a core which compute costs
-- a choosen output format (hour, month, csv, json, ...)
+- a choosen output format (hour, month, json, ...)
 
 # Debuging
 

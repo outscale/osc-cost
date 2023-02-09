@@ -50,7 +50,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             OutputFormat::Month => format!("{}", resources.cost_per_month()?).into_bytes(),
             OutputFormat::Year => format!("{}", resources.cost_per_year()?).into_bytes(),
             OutputFormat::Json => resources.json()?.into_bytes(),
-            OutputFormat::Csv => resources.csv()?.into_bytes(),
             OutputFormat::Prometheus => (resources.prometheus()?).into_bytes(),
             OutputFormat::Ods => resources.ods()?,
             OutputFormat::Human => resources.aggregate().human()?.into_bytes(),
