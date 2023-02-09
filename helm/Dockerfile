@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # syntax=docker/dockerfile:1
 FROM lukemathwalker/cargo-chef:latest-rust-1 AS cargo-chef
-LABEL maintaner="Outscale SAS"
+LABEL maintainer="Outscale SAS"
 WORKDIR /app
 
 FROM cargo-chef AS planner
@@ -13,7 +13,7 @@ COPY src/ /app/src/
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM cargo-chef AS builder 
-LABEL maintaner="Outscale SAS"
+LABEL maintainer="Outscale SAS"
 WORKDIR /app
 COPY --from=planner /app/recipe.json /app/
 RUN cargo chef cook --release --recipe-path recipe.json
@@ -22,7 +22,7 @@ COPY src/ /app/src
 RUN cargo build --release --bin osc-cost
 
 FROM debian:bullseye-slim
-LABEL maintaner="Outscale SAS"
+LABEL maintainer="Outscale SAS"
 ENV USER_ID=65535
 ENV GROUP_ID=65535
 ENV USER_NAME=osc-cost
