@@ -76,53 +76,42 @@ ko_or_die "bad arg" "$oc" --bla
 ok_or_die "write json output" "$oc" --format json --output output.json
 ok_or_die "write hour output" "$oc" --format hour --output output.hour
 ok_or_die "write month output" "$oc" --format month --output output.month
-ok_or_die "write csv output" "$oc" --format csv --output output.csv
 
 # format test with api input source
 ok_or_die "json format with implicit api input source" "$oc" --format json
 ok_or_die "hour format with implicit api input source" "$oc" --format hour
 ok_or_die "month format with implicit api input source" "$oc" --format month
-ok_or_die "csv format with implicit api input source" "$oc" --format csv
 
 ok_or_die "json format with explicit api input source" "$oc" --source api --format json
 ok_or_die "hour format with explicit api input source" "$oc" --source api --format hour
 ok_or_die "month format with explicit api input source" "$oc" --source api --format month
-ok_or_die "csv format with explicit api input source" "$oc" --source api --format csv
 
 ok_or_die "aggregate json format with implicit api input source" "$oc" --aggregate --format json
 ko_or_die "aggregate hour format with implicit api input source" "$oc" --aggregate --format hour
 ko_or_die "aggregate month format with implicit api input source" "$oc" --aggregate --format month
-ok_or_die "aggregate csv format with implicit api input source" "$oc" --aggregate --format csv
 
 ok_or_die "aggregate json format with explicit api input source" "$oc" --aggregate --source api --format json
 ko_or_die "aggregate hour format with explicit api input source" "$oc" --aggregate --source api --format hour
 ko_or_die "aggregate month format with explicit api input source" "$oc" --aggregate --source api --format month
-ok_or_die "aggregate csv format with explicit api input source" "$oc" --aggregate --source api --format csv
 
 # format test with json input source
 ok_or_die "json format with implicit json input source" "$oc" --input output.json --format json
 ok_or_die "hour format with implicit json input source" "$oc" --input output.json --format hour
 ok_or_die "month format with implicit json input source" "$oc" --input output.json --format month
-ok_or_die "csv format with implicit json input source" "$oc" --input output.json --format csv
 
 ok_or_die "json format with explicit json input source" "$oc" --input output.json --source json --format json
 ok_or_die "hour format with explicit json input source" "$oc" --input output.json --source json --format hour
 ok_or_die "month format with explicit json input source" "$oc" --input output.json --source json --format month
-ok_or_die "csv format with explicit json input source" "$oc" --input output.json --source json --format csv
 
 ok_or_die "aggregate json format with implicit json input source" "$oc" --aggregate --input output.json --format json
 ko_or_die "aggregate hour format with implicit json input source" "$oc" --aggregate --input output.json --format hour
 ko_or_die "aggregate month format with implicit json input source" "$oc" --aggregate --input output.json --format month
-ok_or_die "aggregate csv format with implicit json input source" "$oc" --aggregate --input output.json --format csv
 
 ok_or_die "aggregate json format with explicit json input source" "$oc" --aggregate --input output.json --source json --format json
 ko_or_die "aggregate hour format with explicit json input source" "$oc" --aggregate --input output.json --source json --format hour
 ko_or_die "aggregate month format with explicit json input source" "$oc" --aggregate --input output.json --source json --format month
-ok_or_die "aggregate csv format with explicit json input source" "$oc" --aggregate --input output.json --source json --format csv
 
 # input should only work with json as input source
-echo "some,non-empty,csv" > output.csv
-ko_or_die "input as csv should be an error" "$oc" --input output.csv
 ko_or_die "input as hour should be an error" "$oc" --input output.hour
 ko_or_die "input as month should be an error" "$oc" --input output.month
 ko_or_die "--input with --source api" "$oc" --input somefile --source api
