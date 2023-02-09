@@ -199,12 +199,13 @@ impl Resources {
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS)
             .set_content_arrangement(ContentArrangement::Dynamic)
-            .set_width(80)
+            .set_width(100)
             .set_header(vec![
                 "Resource Type",
                 "Count",
                 "Total price per hour",
                 "Total price per month",
+                "Total price per year",
             ]);
 
         for resource in self.resources.iter() {
@@ -236,6 +237,13 @@ impl Resources {
                                 .ok_or("could not get the price_per_month")?,
                             currency
                         ),
+                        format!(
+                            "{}{}",
+                            agg.price_per_month
+                                .ok_or("could not get the price_per_year")?
+                                * 12.0,
+                            currency
+                        ),
                     ])
                 }
                 _ => {
@@ -249,7 +257,7 @@ impl Resources {
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS)
             .set_content_arrangement(ContentArrangement::Dynamic)
-            .set_width(80)
+            .set_width(100)
             .add_row(vec![Cell::new("Account Id"), Cell::new(account_id)])
             .add_row(vec![
                 Cell::new("Total price per hour"),
@@ -258,6 +266,10 @@ impl Resources {
             .add_row(vec![
                 Cell::new("Total price per month"),
                 Cell::new(format!("{}{}", self.cost_per_month()?, currency)),
+            ])
+            .add_row(vec![
+                Cell::new("Total price per year"),
+                Cell::new(format!("{}{}", self.cost_per_year()?, currency)),
             ]);
 
         Ok(format!("Summary:\n{table}\n\nDetails:\n{table_resource}"))
