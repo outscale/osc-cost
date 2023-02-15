@@ -53,7 +53,7 @@ Example of `config.json`:
 
 Here are few examples with different output formats. Note that `json` format will provide the most detailed output.
 
-````
+```
 osc-cost --format=human # default
 Summary:
 ╭───────────────────────┬──────────────╮
