@@ -3,8 +3,10 @@ osccost:
     # -- enable service
     enable: True
   serviceMonitor:
-     # -- enable serviceMonitor 
-    enable: True    
+    # -- enable serviceMonitor 
+    enable: True 
+    # -- scrape interval
+    interval: 10m   
   serviceAccount:
     # -- enable serviceAccount
     enable: True

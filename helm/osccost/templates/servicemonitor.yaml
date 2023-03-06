@@ -1,6 +1,6 @@
 {{- if .Values.osccost.serviceMonitor.enable }}
   {{ $root := . }}
-  {{- with .Values.osccost.serviceMonitor.enable }}
+  {{- with .Values.osccost.serviceMonitor }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -17,6 +17,7 @@ spec:
   endpoints:
     - honorLabels: true
       targetPort: http-metrics
+      interval: {{ .interval }}
   namespaceSelector:
     matchNames:
       - {{ $root.Release.Namespace }}
