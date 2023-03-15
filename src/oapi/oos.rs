@@ -104,6 +104,7 @@ impl Input {
                 price_per_month: None,
                 size_gb: Some(size),
                 price_gb_per_month,
+                number_files: bucket.objects.len() as u32,
             };
             resources.resources.push(Resource::Oos(core_resource));
         }

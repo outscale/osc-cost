@@ -13,6 +13,7 @@ pub struct Oos {
     pub price_per_month: Option<f32>,
     pub size_gb: Option<f32>,
     pub price_gb_per_month: f32,
+    pub number_files: u32,
 }
 
 impl ResourceTrait for Oos {
