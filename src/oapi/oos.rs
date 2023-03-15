@@ -1,7 +1,9 @@
-use std::error;
+use std::{error, time::Duration};
 
 use aws_sdk_s3::{model::Object, Client};
 use log::{info, warn};
+use std::thread;
+use tokio_stream::StreamExt;
 
 use crate::{
     core::{oos::Oos, Resource, Resources},
@@ -9,6 +11,8 @@ use crate::{
 };
 
 use super::Input;
+
+const FETCH_WAIT: u64 = 5;
 
 pub type BucketId = String;
 
@@ -42,13 +46,17 @@ impl Input {
         let req = client.list_objects_v2().prefix("").bucket(bucket_name);
 
         // TODO: handle throttling
-        let Ok(result) = req.send().await else {
-            warn!("warning: error while retrieving the object of {bucket_name}");
-            return None;
-        };
+        let mut stream = req.into_paginator().send();
 
-        let objects = result.contents().unwrap_or_default();
-        let objects = objects.to_vec();
+        let mut objects = vec![];
+        while let Ok(Some(result)) = stream.try_next().await {
+            objects.extend(result.contents().unwrap_or_default().to_vec());
+            if result.is_truncated {
+                info!("waiting before request other objects");
+                thread::sleep(Duration::from_secs(FETCH_WAIT));
+            }
+        }
+
         Some(objects)
     }
 
