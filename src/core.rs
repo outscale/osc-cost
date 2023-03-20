@@ -12,6 +12,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::error;
 use std::fmt;
+use strum_macros::EnumString;
 
 use self::flexible_gpus::FlexibleGpu;
 use self::load_balancers::LoadBalancer;
@@ -35,7 +36,7 @@ pub mod vms;
 pub mod volumes;
 pub mod vpn;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, EnumString)]
 #[serde(tag = "resource_type")]
 pub enum Resource {
     Vm(Vm),
@@ -318,7 +319,7 @@ trait ResourceTrait {
     fn compute(&mut self) -> Result<(), ResourceError>;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Aggregate {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
