@@ -14,9 +14,13 @@ use crate::{
 use super::Input;
 
 pub type LoadbalancerId = String;
+const RESOURCE_NAME: &str = "LoadBalancer";
 
 impl Input {
     pub fn fetch_load_balancers(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let request = ReadLoadBalancersRequest {
             ..Default::default()
         };

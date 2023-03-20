@@ -23,9 +23,13 @@ use regex::Regex;
 use super::Input;
 
 pub type VmId = String;
+const RESOURCE_NAME: &str = "Vm";
 
 impl Input {
     pub fn fetch_vms(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let result: ReadVmsResponse = loop {
             let filter_vm: FiltersVm = match &self.filters {
                 Some(filter) => FiltersVm {

@@ -13,6 +13,8 @@ pub struct Filter {
     pub filter_tag_value: Vec<String>,
     #[arg(long, value_name = "KEY=VALUE")]
     pub filter_tag: Vec<String>,
+    #[arg(long)]
+    pub skip_resource: Vec<String>,
 }
 
 #[derive(Parser, Debug)]

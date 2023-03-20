@@ -14,9 +14,13 @@ use crate::{
 use super::Input;
 
 pub type NatServiceId = String;
+const RESOURCE_NAME: &str = "NatServices";
 
 impl Input {
     pub fn fetch_nat_services(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let result: ReadNatServicesResponse = loop {
             let filters: FiltersNatService = match &self.filters {
                 Some(filter) => FiltersNatService {

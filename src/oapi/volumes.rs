@@ -7,6 +7,7 @@ use outscale_api::{
 };
 
 pub type VolumeId = String;
+const RESOURCE_NAME: &str = "Volume";
 
 use crate::{
     core::{volumes::Volume, Resource, Resources},
@@ -17,6 +18,9 @@ use super::Input;
 
 impl Input {
     pub fn fetch_volumes(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let result: ReadVolumesResponse = loop {
             let filter_volumes: FiltersVolume = match &self.filters {
                 Some(filter) => FiltersVolume {
