@@ -14,9 +14,13 @@ use crate::{
 use super::Input;
 
 pub type PublicIpId = String;
+const RESOURCE_NAME: &str = "PublicIp";
 
 impl Input {
     pub fn fetch_public_ips(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let filters: FiltersPublicIp = match &self.filters {
             Some(filter) => FiltersPublicIp {
                 tag_keys: Some(filter.filter_tag_key.clone()),

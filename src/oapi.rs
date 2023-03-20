@@ -355,6 +355,13 @@ impl Input {
             }
         }
     }
+
+    fn skip_fetch<S: Into<String>>(&self, resource_type: S) -> bool {
+        if let Some(filters) = &self.filters {
+            return filters.skip_resource.contains(&resource_type.into());
+        }
+        false
+    }
 }
 
 impl From<Input> for core::Resources {

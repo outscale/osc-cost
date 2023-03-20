@@ -14,9 +14,13 @@ use crate::{
 use super::Input;
 
 pub type SnapshotId = String;
+const RESOURCE_NAME: &str = "Snapshot";
 
 impl Input {
     pub fn fetch_snapshots(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let account_id = match self.account_id() {
             None => {
                 warn!("warning: no account_id available... skipping");

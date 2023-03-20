@@ -15,8 +15,13 @@ use super::Input;
 
 pub type FlexibleGpuId = String;
 
+const RESOURCE_NAME: &str = "FlexibleGpu";
+
 impl Input {
     pub fn fetch_flexible_gpus(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let request = ReadFlexibleGpusRequest {
             ..Default::default()
         };

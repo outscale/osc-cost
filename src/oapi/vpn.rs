@@ -14,9 +14,13 @@ use crate::{
 use super::Input;
 
 pub type VpnId = String;
+const RESOURCE_NAME: &str = "Vpn";
 
 impl Input {
     pub fn fetch_vpns(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let filters = match &self.filters {
             Some(filter) => FiltersVpnConnection {
                 tag_keys: Some(filter.filter_tag_key.clone()),

@@ -15,6 +15,7 @@ use super::Input;
 const FETCH_WAIT: u64 = 5;
 
 pub type BucketId = String;
+const RESOURCE_NAME: &str = "Oos";
 
 pub struct OosBucket {
     objects: Vec<Object>,
@@ -62,6 +63,9 @@ impl Input {
 
     #[tokio::main]
     pub async fn fetch_buckets(&mut self) -> Result<(), Box<dyn error::Error>> {
+        if self.skip_fetch(RESOURCE_NAME) {
+            return Ok(());
+        }
         let Some(buckets) = self.list_buckets().await else {
             return Ok(())
         };
