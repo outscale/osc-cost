@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{ResourceError, ResourceTrait, HOURS_PER_MONTH};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct FlexibleGpu {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,

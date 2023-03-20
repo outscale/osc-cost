@@ -1,6 +1,9 @@
+use std::str::FromStr;
+
 use clap::Parser;
 use log::error;
 
+use crate::core::Resource;
 pub fn parse() -> Option<Args> {
     Args::parse().validate()
 }
@@ -99,6 +102,17 @@ impl Args {
             }
             _ => 0,
         };
+
+        // Check that the skip_resource with valid resources
+        if let Some(filter) = &self.filter {
+            for skip_resource in &filter.skip_resource {
+                if Resource::from_str(skip_resource).is_err() {
+                    error!("cannot skip unknown resources {}", skip_resource);
+                    err_count += 1
+                }
+            }
+        }
+
         if err_count > 0 {
             return None;
         }
