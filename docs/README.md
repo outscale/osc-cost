@@ -18,18 +18,22 @@ Read license for more details.
   - Virtual Machines (tina types, aws-compatible types, licenses)
   - Volumes
   - Public Ips
-  - Snapshots
-  - Load Balancer
+  - Snapshots (🚨 Warning: snapshot computation is currently known to be over-priced.)
+  - Load Balancers
   - Flexible GPU
-  - VPN Connection
-  - Outscale Object Storage
+  - VPN Connections
+  - Outscale Object Storage (🚨 Warning: Oos computation can take a long time, use `--skip-resource Oos` to disable this computation.)
+  - Nat Services
 - Output formats:
   - Current cost per hour
   - Current cost per month
+  - Current cost per year
   - Json (line-delimited JSON document)
   - Human
+  - Open Document Spreadsheet (Ods)
+  - Prometheus
 
-🚨 Warning: snapshot computation is currently known to be over-priced.
+
 
 # Installation
 
@@ -110,7 +114,7 @@ Check [contributing documentation](CONTRIBUTING.md).
 
 # Release
 
-1. Update chart version (if necessary) in helm/osccost/Chart.yaml and osccost version in helm/osccost/values.yaml
+1. Update chart version (if necessary) in `helm/osccost/Chart.yaml` and osc-cost version in `helm/osccost/values.yaml`
 
 2. Tag the release
 ```
