@@ -160,7 +160,10 @@ impl Input {
         for (vm_id, vm) in &self.vms {
             let specs = match VmSpecs::new(vm, self) {
                 Some(s) => s,
-                None => continue,
+                None => {
+                    warn!("error while creating the VMSpec of {}", vm_id);
+                    continue;
+                }
             };
             let core_vm = Vm {
                 osc_cost_version: Some(String::from(VERSION)),
@@ -232,6 +235,7 @@ impl VmSpecs {
         match vm_type.starts_with("tina") {
             true => out
                 .parse_tina_type()?
+                .parse_performance(vm.performance.clone())?
                 .parse_product_price(input)?
                 .parse_tina_prices(input),
             false => out
@@ -244,18 +248,45 @@ impl VmSpecs {
     fn parse_tina_type(mut self) -> Option<VmSpecs> {
         // format: tinav5.c20r40p1
         //              │  ││ ││ │
-        //              │  ││ ││ └── vcpu performance
+        //              │  ││ ││ └── vcpu performance (optionnal)
         //              │  ││ └┴── ram quantity
         //              │  └┴── number of vcores
         //              └── generation
         lazy_static! {
-            static ref REG: Regex = Regex::new(r"^tinav(\d+)\.c(\d+)r(\d+)p(\d+)$").unwrap();
+            static ref REG: Regex = Regex::new(r"^tinav(\d+)\.c(\d+)r(\d+)(p(\d+))?$").unwrap();
         }
         let cap = REG.captures_iter(&self.vm_type).next()?;
         self.generation = String::from(&cap[1]);
         self.vcpu = cap[2].parse::<usize>().ok()?;
         self.ram_gb = cap[3].parse::<usize>().ok()?;
-        self.performance = String::from(&cap[4]);
+        self.performance = String::from(cap.get(5).map_or("", |m| m.as_str()));
+        Some(self)
+    }
+
+    fn parse_performance(mut self, performance_opt: Option<String>) -> Option<VmSpecs> {
+        let Some(performance_str) = performance_opt else {
+            warn!("the performance is empty, internal error");
+            return None;
+        };
+
+        // https://docs.outscale.com/en/userguide/Instance-Types.html#_characteristics
+        let performance = match performance_str.as_str() {
+            "medium" => "3",
+            "high" => "2",
+            "highest" => "1",
+            e => {
+                warn!("the performance is not found: {}", e);
+                return None;
+            }
+        };
+
+        if !self.performance.is_empty() && performance != self.performance {
+            warn!("the performance is inconsistent between vmType and performance, internal error");
+            return None;
+        }
+
+        self.performance = performance.to_string();
+
         Some(self)
     }
 
