@@ -9,7 +9,7 @@ use serde::{
 };
 use std::collections::HashMap;
 
-use crate::prometheus::error::{Error, Result};
+use super::error::{Error, Result};
 
 #[derive(Debug)]
 struct Serializer {

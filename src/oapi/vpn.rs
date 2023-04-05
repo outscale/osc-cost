@@ -23,9 +23,9 @@ impl Input {
         }
         let filters = match &self.filters {
             Some(filter) => FiltersVpnConnection {
-                tag_keys: Some(filter.filter_tag_key.clone()),
-                tag_values: Some(filter.filter_tag_value.clone()),
-                tags: Some(filter.filter_tag.clone()),
+                tag_keys: Some(filter.tag_keys.clone()),
+                tag_values: Some(filter.tag_values.clone()),
+                tags: Some(filter.tags.clone()),
                 ..Default::default()
             },
             None => FiltersVpnConnection::new(),

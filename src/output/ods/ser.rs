@@ -7,7 +7,8 @@ use serde::{
 };
 use spreadsheet_ods::{defaultstyles::DefaultFormat, CellStyle, CellStyleRef, Sheet, WorkBook};
 
-use crate::ods::error::{Error, Result};
+use super::error::{Error, Result};
+
 #[derive(Debug)]
 pub struct Serializer {
     sheets: HashMap<String, Sheet>,
