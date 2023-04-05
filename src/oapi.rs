@@ -1,5 +1,4 @@
-use crate::args::Filter;
-use crate::core::{self};
+use crate::core::Resources;
 use crate::VERSION;
 use aws_config::SdkConfig;
 use aws_credential_types::provider::SharedCredentialsProvider;
@@ -60,6 +59,13 @@ mod snapshots;
 mod vms;
 mod volumes;
 mod vpn;
+
+pub struct Filter {
+    pub tag_keys: Vec<String>,
+    pub tag_values: Vec<String>,
+    pub tags: Vec<String>,
+    pub skip_resource: Vec<String>,
+}
 
 pub struct Input {
     config: Configuration,
@@ -364,9 +370,9 @@ impl Input {
     }
 }
 
-impl From<Input> for core::Resources {
+impl From<Input> for Resources {
     fn from(input: Input) -> Self {
-        let mut resources = core::Resources {
+        let mut resources = Resources {
             resources: Vec::new(),
         };
         input.fill_resource_vm(&mut resources);

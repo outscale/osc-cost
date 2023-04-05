@@ -1,17 +1,20 @@
-use args::OutputFormat;
 use log::error;
+use osc_cost::core::{Resource, Resources};
+use osc_cost::oapi::{Input, Filter};
+use args::OutputFormat;
+use output::human::human;
+use output::json::json;
+use output::ods::ods;
+use output::prometheus::prometheus;
 use serde_json::Deserializer;
 use std::error::{self, Error};
 use std::fs::{self, File};
 use std::io::{BufReader, Write};
 use std::path::Path;
 use std::process::exit;
+
 mod args;
-mod core;
-mod oapi;
-mod ods;
-mod prometheus;
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+mod output;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -23,19 +26,27 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut resources = match args.input {
             Some(input_file) => {
                 let reader = BufReader::new(File::open(input_file)?);
-                let stream = Deserializer::from_reader(reader).into_iter::<core::Resource>();
+                let stream = Deserializer::from_reader(reader).into_iter::<Resource>();
 
-                core::Resources {
+                Resources {
                     resources: stream
                         .map(|value| value.expect("while reading input"))
-                        .collect::<Vec<core::Resource>>(),
+                        .collect::<Vec<Resource>>(),
                 }
             }
             None => {
-                let mut oapi_input = oapi::Input::new(args.profile)?;
-                oapi_input.filters = args.filter;
+                let mut oapi_input = Input::new(args.profile)?;
+                oapi_input.filters = match args.filter {
+                    None => None,
+                    Some(f) => Some(Filter{
+                        tag_keys: f.filter_tag_key,
+                        tag_values: f.filter_tag_value,
+                        tags: f.filter_tag,
+                        skip_resource: f.skip_resource,
+                    })
+                };
                 oapi_input.fetch()?;
-                core::Resources::from(oapi_input)
+                Resources::from(oapi_input)
             }
         };
 
@@ -49,10 +60,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             OutputFormat::Hour => format!("{}", resources.cost_per_hour()?).into_bytes(),
             OutputFormat::Month => format!("{}", resources.cost_per_month()?).into_bytes(),
             OutputFormat::Year => format!("{}", resources.cost_per_year()?).into_bytes(),
-            OutputFormat::Json => resources.json()?.into_bytes(),
-            OutputFormat::Prometheus => (resources.prometheus()?).into_bytes(),
-            OutputFormat::Ods => resources.ods()?,
-            OutputFormat::Human => resources.aggregate().human()?.into_bytes(),
+            OutputFormat::Json => json(&resources)?.into_bytes(),
+            OutputFormat::Prometheus => (prometheus(&resources)?).into_bytes(),
+            OutputFormat::Ods => ods(&resources)?,
+            OutputFormat::Human => human(&resources.aggregate())?.into_bytes(),
         };
 
         match args.output {

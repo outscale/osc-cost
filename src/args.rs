@@ -2,8 +2,9 @@ use std::str::FromStr;
 
 use clap::Parser;
 use log::error;
+use osc_cost::core::Resource;
 
-use crate::core::Resource;
+
 pub fn parse() -> Option<Args> {
     Args::parse().validate()
 }
