@@ -74,8 +74,8 @@ impl Input {
                 continue;
             };
 
-            match &public_ip.vm_id {
-                None => match self.catalog_entry(
+            match (&public_ip.link_public_ip_id, &public_ip.vm_id) {
+                (None, None) => match self.catalog_entry(
                     "TinaOS-FCU",
                     "ElasticIP:IdleAddress",
                     "AssociateAddressVPC",
@@ -83,7 +83,8 @@ impl Input {
                     Some(price) => price_non_attached = Some(price),
                     None => continue,
                 },
-                Some(vm_id) => match self.vms.get(vm_id) {
+                (Some(_), None) => continue,
+                (Some(_), Some(vm_id)) => match self.vms.get(vm_id) {
                     Some(vm) => match &vm.public_ip {
                         Some(vm_public_ip) => match *vm_public_ip == *public_ip_str {
                             // First Public IP is free
@@ -116,6 +117,10 @@ impl Input {
                         continue;
                     }
                 },
+                (None, Some(_)) => {
+                    warn!("cannot have a VmId and no link");
+                    continue;
+                }
             };
             let core_public_ip = PublicIp {
                 osc_cost_version: Some(String::from(VERSION)),
