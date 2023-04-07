@@ -13,6 +13,7 @@ use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::configuration_file::{ConfigurationFile, ConfigurationFileError};
 use outscale_api::apis::subregion_api::read_subregions;
 use outscale_api::apis::Error::ResponseError;
+use outscale_api::models::ConsumptionEntry;
 use outscale_api::models::{
     Account, CatalogEntry, FlexibleGpu, Image, NatService, PublicIp, ReadAccountsRequest,
     ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse, ReadSubregionsRequest,
@@ -50,6 +51,7 @@ type ImageId = String;
 type CatalogId = String;
 type VmTypeName = String;
 
+mod digest;
 mod flexible_gpus;
 mod load_balancers;
 mod nat_services;
@@ -88,6 +90,7 @@ pub struct Input {
     pub load_balancers: Vec<LoadbalancerId>,
     pub vpns: Vec<VpnId>,
     pub buckets: HashMap<BucketId, OosBucket>,
+    pub consumption: HashMap<CatalogId, ConsumptionEntry>,
 }
 
 impl Input {
@@ -114,6 +117,7 @@ impl Input {
             load_balancers: Vec::new(),
             vpns: Vec::new(),
             buckets: HashMap::new(),
+            consumption: HashMap::new(),
         })
     }
 
@@ -203,7 +207,7 @@ impl Input {
         Ok(())
     }
 
-    fn fetch_catalog(&mut self) -> Result<(), Box<dyn error::Error>> {
+    pub fn fetch_catalog(&mut self) -> Result<(), Box<dyn error::Error>> {
         let result: ReadCatalogResponse = loop {
             let request = ReadCatalogRequest::new();
             let response = read_catalog(&self.config, Some(request));

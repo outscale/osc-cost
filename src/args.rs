@@ -4,7 +4,6 @@ use clap::Parser;
 use log::error;
 use osc_cost::core::Resource;
 
-
 pub fn parse() -> Option<Args> {
     Args::parse().validate()
 }
@@ -19,6 +18,16 @@ pub struct Filter {
     pub filter_tag: Vec<String>,
     #[arg(long)]
     pub skip_resource: Vec<String>,
+}
+
+#[derive(Parser, Debug, Clone)]
+pub struct Drift {
+    #[arg(long, default_value_t = false)]
+    pub compute_drift: bool,
+    #[arg(long)]
+    pub from_date: Option<String>,
+    #[arg(long)]
+    pub to_date: Option<String>,
 }
 
 #[derive(Parser, Debug)]
@@ -41,6 +50,8 @@ pub struct Args {
     pub aggregate: bool,
     #[arg(long, default_value_t = false)]
     pub help_resources: bool,
+    #[command(flatten)]
+    pub drift: Drift,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug)]
@@ -112,6 +123,23 @@ impl Args {
                     err_count += 1
                 }
             }
+        }
+
+        err_count += match (&self.drift.compute_drift, &self.format) {
+            (false, _) => 0,
+            (true, OutputFormat::Json) => 0,
+            (true, OutputFormat::Human) => 0,
+            (true, _) => {
+                error!("cannot use drift with the specified output");
+                1
+            }
+        };
+
+        if self.drift.compute_drift
+            && (self.drift.to_date.is_none() || self.drift.from_date.is_none())
+        {
+            error!("you must specified --from-date and --to-date when computing the drift");
+            err_count += 1;
         }
 
         if err_count > 0 {

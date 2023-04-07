@@ -17,6 +17,7 @@ use self::vpn::Vpn;
 
 static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
 
+pub mod digest;
 pub mod flexible_gpus;
 pub mod load_balancers;
 pub mod nat_services;

@@ -194,7 +194,7 @@ impl Input {
     }
 }
 
-struct VmSpecs {
+pub struct VmSpecs {
     vm_type: String,
     generation: String,
     vcpu: usize,
@@ -234,32 +234,25 @@ impl VmSpecs {
         };
         match vm_type.starts_with("tina") {
             true => out
-                .parse_tina_type()?
+                .internal_parse_tina_type()?
                 .parse_performance(vm.performance.clone())?
                 .parse_product_price(input)?
                 .parse_tina_prices(input),
             false => out
-                .parse_box_type(input)?
+                .internal_parse_box_type(input)?
                 .parse_product_price(input)?
                 .parse_box_prices(input),
         }
     }
 
-    fn parse_tina_type(mut self) -> Option<VmSpecs> {
-        // format: tinav5.c20r40p1
-        //              │  ││ ││ │
-        //              │  ││ ││ └── vcpu performance (optionnal)
-        //              │  ││ └┴── ram quantity
-        //              │  └┴── number of vcores
-        //              └── generation
-        lazy_static! {
-            static ref REG: Regex = Regex::new(r"^tinav(\d+)\.c(\d+)r(\d+)(p(\d+))?$").unwrap();
-        }
-        let cap = REG.captures_iter(&self.vm_type).next()?;
-        self.generation = String::from(&cap[1]);
-        self.vcpu = cap[2].parse::<usize>().ok()?;
-        self.ram_gb = cap[3].parse::<usize>().ok()?;
-        self.performance = String::from(cap.get(5).map_or("", |m| m.as_str()));
+    fn internal_parse_tina_type(mut self) -> Option<VmSpecs> {
+        (self.generation, self.vcpu, self.ram_gb, self.performance) =
+            match VmSpecs::parse_tina_type(&self.vm_type) {
+                Some((gen, vpcu, ram, performance)) => {
+                    (gen, vpcu as usize, ram as usize, performance)
+                }
+                None => return None,
+            };
         Some(self)
     }
 
@@ -298,14 +291,18 @@ impl VmSpecs {
             // License calculation is specific to each product code.
             // https://en.outscale.com/pricing/#licenses
             let cores = self.vcpu as f32;
+            let Some(price_factor) = VmSpecs::compute_product_price_per_hour(cores, product_code) else {
+                warn!("product code {} is not managed", product_code);
+                continue;
+            };
+
             match product_code.as_str() {
                 // Generic Linux vm, should be free
                 "0001" => {}
                 // Microsoft Windows Server 2019 License
                 // Price by 2 cores
                 "0002" => {
-                    let cores_to_pay = ((cores + 1.0) / 2.0).floor();
-                    let price_for_vm = cores_to_pay * price;
+                    let price_for_vm = price_factor * price;
                     // set back price per cpu per hour
                     self.price_product_per_cpu_per_hour += price_for_vm / cores;
                 }
@@ -321,8 +318,7 @@ impl VmSpecs {
                 // Microsoft Windows SQL Server 2019 Enterprise Edition (0009)
                 // Price by 2 cores (4 cores min)
                 "0008" | "0009" => {
-                    let cores_to_pay = ((cores + 1.0) / 2.0).floor().max(4.0);
-                    let price_for_vm = cores_to_pay * price;
+                    let price_for_vm = price_factor * price;
                     // set back price per cpu per hour
                     self.price_product_per_cpu_per_hour += price_for_vm / cores;
                 }
@@ -348,10 +344,55 @@ impl VmSpecs {
         Some(self)
     }
 
-    fn parse_box_type(mut self, input: &Input) -> Option<VmSpecs> {
-        let vm_type = input.vm_types.get(&self.vm_type)?;
-        self.vcpu = vm_type.vcore_count? as usize;
-        self.ram_gb = vm_type.memory_size? as usize;
+    fn internal_parse_box_type(mut self, input: &Input) -> Option<VmSpecs> {
+        (self.generation, self.vcpu, self.ram_gb, self.performance) =
+            match VmSpecs::parse_box_type(&self.vm_type, input) {
+                Some((gen, vpcu, ram, performance)) => {
+                    (gen, vpcu as usize, ram as usize, performance)
+                }
+                None => return None,
+            };
+
+        Some(self)
+    }
+
+    fn parse_box_prices(mut self, input: &Input) -> Option<VmSpecs> {
+        self.price_box_per_hour = input.catalog_entry(
+            "TinaOS-FCU",
+            &format!("BoxUsage:{}", self.vm_type),
+            "RunInstances-OD",
+        )?;
+        Some(self)
+    }
+
+    pub fn parse_tina_type(vm_type: &str) -> Option<(String, f32, f32, String)> {
+        // format: tinav5.c20r40p1
+        //              │  ││ ││ │
+        //              │  ││ ││ └── vcpu performance
+        //              │  ││ └┴── ram quantity
+        //              │  └┴── number of vcores
+        //              └── generation
+        lazy_static! {
+            static ref REG: Regex = Regex::new(r"^tinav(\d+)\.c(\d+)r(\d+)(p(\d+))?$").unwrap();
+        }
+        let cap = REG.captures_iter(vm_type).next()?;
+        let generation = String::from(&cap[1]);
+        let vcpu = cap[2].parse::<usize>().ok()?;
+        let ram_gb = cap[3].parse::<usize>().ok()?;
+        let performance = String::from(cap.get(5).map_or("2", |m| m.as_str()));
+        Some((generation, vcpu as f32, ram_gb as f32, performance))
+    }
+
+    pub fn parse_box_type(vm_type: &String, input: &Input) -> Option<(String, f32, f32, String)> {
+        let vm_type_obj = input.vm_types.get(vm_type)?;
+        let Some(vcpu) = vm_type_obj.vcore_count  else {
+        warn!("vpcu is not defined for this vm type {}", vm_type);
+        return None;
+    };
+        let Some(ram_gb) = vm_type_obj.memory_size else {
+        warn!("ram_gb is not defined for this vm type {}", vm_type);
+        return None;
+    };
         // We don't have this information through API for now but we have it on public documentation:
         // https://docs.outscale.com/en/userguide/Instance-Types.html
         // format: m4.4xlarge
@@ -359,12 +400,12 @@ impl VmSpecs {
         lazy_static! {
             static ref REG: Regex = Regex::new(r"^([a-z]+\d+)\..*$").unwrap();
         }
-        let cap = match REG.captures_iter(&self.vm_type).next() {
+        let cap = match REG.captures_iter(vm_type).next() {
             Some(cap) => cap,
             // family and generation is not mandatory to extract price.
             None => {
-                warn!("annot extract vm family from {}", self.vm_type);
-                return Some(self);
+                warn!("Cannot extract vm family from {}", vm_type);
+                return None;
             }
         };
         let family = String::from(&cap[1]);
@@ -409,17 +450,42 @@ impl VmSpecs {
                 ("", "")
             }
         };
-        self.generation = String::from(generation);
-        self.performance = String::from(performance);
-        Some(self)
+        let generation = String::from(generation);
+        let performance = String::from(performance);
+
+        Some((generation, vcpu as f32, ram_gb, performance))
     }
 
-    fn parse_box_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        self.price_box_per_hour = input.catalog_entry(
-            "TinaOS-FCU",
-            &format!("BoxUsage:{}", self.vm_type),
-            "RunInstances-OD",
-        )?;
-        Some(self)
+    pub fn compute_product_price_per_hour(vcpu: f32, product_code: &String) -> Option<f32> {
+        // License calculation is specific to each product code.
+        // https://en.outscale.com/pricing/#licenses
+        let cores = vcpu;
+        return match product_code.as_str() {
+            // Generic Linux vm, should be free
+            "0001" => Some(0.0),
+            // Microsoft Windows Server 2019 License
+            // Price by 2 cores
+            "0002" => {
+                let cores_to_pay = ((cores + 1.0) / 2.0).floor();
+                Some(cores_to_pay)
+            }
+            // mapr license (0003)
+            // Oracle Linux OS Distribution (0004)
+            // Microsoft Windows 10 E3 VDA License (0005)
+            // Red Hat Enterprise Linux OS Distribution (0006)
+            // sql server web (0007)
+            "0003" | "0004" | "0005" | "0006" | "0007" => Some(1.0),
+            // Microsoft Windows SQL Server 2019 Standard Edition (0008)
+            // Microsoft Windows SQL Server 2019 Enterprise Edition (0009)
+            // Price by 2 cores (4 cores min)
+            "0008" | "0009" => {
+                let cores_to_pay = ((cores + 1.0) / 2.0).floor().max(4.0);
+                Some(cores_to_pay)
+            }
+            _ => {
+                warn!("product code {} is not managed", product_code);
+                None
+            }
+        };
     }
 }
