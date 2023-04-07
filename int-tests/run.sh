@@ -116,6 +116,17 @@ ko_or_die "input as hour should be an error" "$oc" --input output.hour
 ko_or_die "input as month should be an error" "$oc" --input output.month
 ko_or_die "--input with --source api" "$oc" --input somefile --source api
 
+# drift estimation
+previous_day=$(date "+%Y-%m-%d" --date='-1day')
+current_day=$(date "+%Y-%m-%d" )
+ko_or_die "no dates for drift should be an error" "$oc" --compute-drift 
+ko_or_die "no from_date for drift should be an error" "$oc" --compute-drift --to-date "2023-04-05"
+ko_or_die "no to_date for drift should be an error" "$oc" --compute-drift --from-date "2023-04-05"
+ko_or_die "prometheus format for drift should be an error" "$oc" --compute-drift --from-date "2023-04-05" --to-date "2023-04-06" --format prometheus
+ok_or_die "json format for drift should not be an error" "$oc" --compute-drift --from-date "${previous_day}" --to-date "${current_day}" --format json
+ok_or_die "human format for drift should be an error" "$oc" --compute-drift --from-date "${previous_day}" --to-date "${current_day}" --format human
+
+
 # bad credentials should result of a failure
 SK_TMP=$OSC_SECRET_KEY
 OSC_SECRET_KEY="BAD_SECRET_KEY"
