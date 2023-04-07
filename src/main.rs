@@ -1,12 +1,14 @@
-use log::error;
-use osc_cost::core::{Resource, Resources};
-use osc_cost::oapi::{Input, Filter};
 use args::OutputFormat;
-use output::human::human;
-use output::json::json;
+use log::{error, warn};
+use osc_cost::core::digest::{compute_drift, Digest};
+use osc_cost::core::{Resource, Resources};
+use osc_cost::oapi::{Filter, Input};
+use output::human::Human;
+use output::json::Json;
 use output::ods::ods;
 use output::prometheus::prometheus;
 use serde_json::Deserializer;
+use std::collections::HashMap;
 use std::error::{self, Error};
 use std::fs::{self, File};
 use std::io::{BufReader, Write};
@@ -35,15 +37,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
             None => {
-                let mut oapi_input = Input::new(args.profile)?;
+                let mut oapi_input = Input::new(args.profile.clone())?;
                 oapi_input.filters = match args.filter {
                     None => None,
-                    Some(f) => Some(Filter{
+                    Some(f) => Some(Filter {
                         tag_keys: f.filter_tag_key,
                         tag_values: f.filter_tag_value,
                         tags: f.filter_tag,
                         skip_resource: f.skip_resource,
-                    })
+                    }),
                 };
                 oapi_input.fetch()?;
                 Resources::from(oapi_input)
@@ -56,15 +58,47 @@ fn main() -> Result<(), Box<dyn Error>> {
             resources = resources.aggregate();
         }
 
-        let output = match args.format {
-            OutputFormat::Hour => format!("{}", resources.cost_per_hour()?).into_bytes(),
-            OutputFormat::Month => format!("{}", resources.cost_per_month()?).into_bytes(),
-            OutputFormat::Year => format!("{}", resources.cost_per_year()?).into_bytes(),
-            OutputFormat::Json => json(&resources)?.into_bytes(),
-            OutputFormat::Prometheus => (prometheus(&resources)?).into_bytes(),
-            OutputFormat::Ods => ods(&resources)?,
-            OutputFormat::Human => human(&resources.aggregate())?.into_bytes(),
-        };
+        let output: Vec<u8>;
+        if args.drift.compute_drift {
+            resources = resources.aggregate();
+
+            let mut oapi_input = Input::new(args.profile.clone())?;
+            oapi_input.fetch_catalog()?;
+            oapi_input.fetch_vm_types()?; // needed to extract information from boxes
+            oapi_input.fetch_digest(
+                &args.drift.from_date.clone().unwrap(),
+                &args.drift.to_date.clone().unwrap(),
+            )?;
+            let mut digests = HashMap::<String, Digest>::new();
+            oapi_input.fill_digest(&mut digests);
+
+            let drifts = compute_drift(
+                digests,
+                &resources,
+                args.drift.from_date.unwrap().as_str(),
+                args.drift.to_date.unwrap().as_str(),
+            )
+            .expect("Error while computing the drift");
+
+            output = match args.format {
+                OutputFormat::Json => drifts.json()?.into_bytes(),
+                OutputFormat::Human => drifts.human()?.into_bytes(),
+                _ => {
+                    warn!("unimplemented output for drift computation");
+                    exit(1);
+                }
+            };
+        } else {
+            output = match args.format {
+                OutputFormat::Hour => format!("{}", resources.cost_per_hour()?).into_bytes(),
+                OutputFormat::Month => format!("{}", resources.cost_per_month()?).into_bytes(),
+                OutputFormat::Year => format!("{}", resources.cost_per_year()?).into_bytes(),
+                OutputFormat::Json => resources.json()?.into_bytes(),
+                OutputFormat::Prometheus => (prometheus(&resources)?).into_bytes(),
+                OutputFormat::Ods => ods(&resources)?,
+                OutputFormat::Human => resources.aggregate().human()?.into_bytes(),
+            };
+        }
 
         match args.output {
             Some(output_file) => {
