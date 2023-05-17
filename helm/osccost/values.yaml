@@ -36,6 +36,7 @@ osccost:
   deployment:
     # -- enable deployment
     enable: True
+    registry_credential: ""
     containers:
     # -- Outscale provider image
       image: outscale/osc-cost
