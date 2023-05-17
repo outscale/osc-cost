@@ -40,7 +40,7 @@ osccost:
     # -- Outscale provider image
       image: outscale/osc-cost
     # -- Outscale provider image tag
-      imageTag: "v0.2.0"
+      imageTag: "v0.3.0"
     # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
       pullPolicy: Always
     # -- Additional securityContext to add
@@ -69,6 +69,7 @@ osccost:
         ephemeralstorage:
     # -- Container ephemeralstorage requests
           requests: 100Mi
-    # -- Container ephemeralstorage limts
+    # -- Container ephemeralstorage limits
           limits: 200Mi
-
+    # -- Container env extra param for osc-cost command
+      osccost-extra-params: ''
