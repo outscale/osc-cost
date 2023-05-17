@@ -72,4 +72,4 @@ osccost:
     # -- Container ephemeralstorage limits
           limits: 200Mi
     # -- Container env extra param for osc-cost command
-      osccost-extra-params: ''
+      osccost-extra-params: ""
