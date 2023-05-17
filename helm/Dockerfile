@@ -40,7 +40,9 @@ USER osc-cost
 WORKDIR /app
 COPY --chown=osc-cost:osc-cost ./helm/entrypoint.sh /app
 COPY --from=builder  /app/target/release/osc-cost /usr/local/bin
+
+ENV OSCCOST_EXTRA_PARAMS=''
 HEALTHCHECK CMD curl --fail http://localhost:8080/metrics || exit 1
 EXPOSE 8080
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["8080", "/usr/local/bin/osc-cost", "--format=prometheus" ,"/home/osc-cost/.osc/config.json"]
+CMD ["8080", "/home/osc-cost/.osc/config.json", "/usr/local/bin/osc-cost", "--format=prometheus"]

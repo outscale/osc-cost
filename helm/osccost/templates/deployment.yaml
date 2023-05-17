@@ -25,11 +25,11 @@ spec:
         app.kubernetes.io/instance:  "{{ template "osccost.fullname" $root }}"
     spec:
       serviceAccountName: {{ template "osccost.serviceAccount" $root }}
-      automountServiceAccountToken: true
+      automountServiceAccountToken: false
       containers:
         - name: osc-cost
           image: "{{ .containers.image }}:{{ .containers.imageTag }}"
-          imagePullPolicy: Always
+          imagePullPolicy: {{ .containers.pullPolicy }}
           env:
             - name: OSC_ACCESS_KEY
               valueFrom:
@@ -90,6 +90,3 @@ spec:
       - name: {{ .registry_credential | default "regcred" }}
   {{- end }}
 {{- end }}
-
-        
-    
