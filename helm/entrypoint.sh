@@ -18,7 +18,7 @@ if [[ ! -f "$3" ]]; then
     echo "$3 not found" >&2
     exit 1
 fi
-jq -n '{default: {"access_key": "$OSC_ACCESS_KEY", "secret_key": "$OSC_SECRET_KEY", "host": "outscale.com", "https": true, "method": "POST", "region_name": "$OSC_REGION"}}' > $4
+jq -n '{default: {"access_key": "$OSC_ACCESS_KEY", "secret_key": "$OSC_SECRET_KEY", "host": "outscale.com", "https": true, "method": "POST", "region": "$OSC_REGION"}}' > $4
 while true;
   do 
     echo -e "HTTP/1.1 200 OK\n\n$($3 $4 $OSCCOST_EXTRA_PARAMS)" \
