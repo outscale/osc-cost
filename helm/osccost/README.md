@@ -22,7 +22,7 @@ Exporter prometheus to allow Outscale users to estimate their cloud costs.
 | osccost.deployment.containers.securityContext.readOnlyRootFilesystem | bool | `false` | Set read only rootfs |
 | osccost.deployment.containers.securityContext.runAsGroup | int | `65535` | Run as group |
 | osccost.deployment.containers.securityContext.runAsUser | int | `65535` | Run as user |
-| osccost.deployment.containers.osccost-extra-params | string | `""` | Allow to pass extra parameters to osc-cost command (for example "--skip-resource Oos") |
+| osccost.deployment.containers.osccostExtraParams | string | `""` | Allow to pass extra parameters to osc-cost command (for example "--skip-resource Oos") |
 | osccost.deployment.enable | bool | `true` | enable deployment |
 | osccost.ingress.enable | bool | `true` | enable ingress |
 | osccost.ingress.enableTls | bool | `false` | enable Tls |

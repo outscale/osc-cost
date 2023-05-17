@@ -48,7 +48,7 @@ spec:
                   key: OSC_REGION
             {{- if .containers.osccost-extra-params }}
             - name: OSCCOST_EXTRA_PARAMS
-              value: "{{ .containers.osccost-extra-params }}"
+              value: "{{ .containers.osccostExtraParams }}"
             {{- end }}
           ports:
             - name: http-metrics
