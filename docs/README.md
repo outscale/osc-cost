@@ -108,6 +108,35 @@ osc-cost --format=json
 ...
 ```
 
+
+> **_NOTE:_** The next feature is still in beta
+
+The tools can also be used to see the drift between osc-cost estimation and what have been actually recorded. Here are the steps to do that:
+- store the output of osc-cost in a json
+  ```
+  osc-cost --format json --output account.json
+  ```
+- freeze the account during **one day**
+- the next day 
+  ```
+    osc-cost --compute-drift --from-date "$(date "+%Y-%m-%d" --date='-1day') --to-date $(date "+%Y-%m-%d") --input account.json
+  ```
+
+You will have the details of the drift.
+```
+╭───────────────┬──────────┬────────┬───────╮
+│ Resource Type ┆ Osc-cost ┆ Digest ┆ Drift │
+╞═══════════════╪══════════╪════════╪═══════╡
+│ Volume        ┆ 1.18     ┆ 1.18   ┆ 0%    │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┤
+│ Oos           ┆ 0.01     ┆ 0.01   ┆ -5%   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┤
+│ Snapshot      ┆ 1.25     ┆ 0.62   ┆ 101%  │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┤
+│ Vm            ┆ 34.01    ┆ 34.01  ┆ 0%    │
+╰───────────────┴──────────┴────────┴───────╯
+```
+
 # Contributing
 
 Check [contributing documentation](CONTRIBUTING.md).
