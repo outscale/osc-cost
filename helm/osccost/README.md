@@ -1,6 +1,6 @@
 # osccost
 
-![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.3.1](https://img.shields.io/badge/AppVersion-0.3.1-informational?style=flat-square)
+![Version: 0.3.1](https://img.shields.io/badge/Version-0.3.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.3.1](https://img.shields.io/badge/AppVersion-0.3.1-informational?style=flat-square)
 
 Exporter prometheus to allow Outscale users to estimate their cloud costs.
 
@@ -13,7 +13,7 @@ Exporter prometheus to allow Outscale users to estimate their cloud costs.
 | osccost.deployment.containers.pullPolicy | string | `"Always"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
 | osccost.deployment.containers.resources.cpu.limits | string | `"600m"` | Container cpu limts |
 | osccost.deployment.containers.resources.cpu.requests | string | `"300m"` | Container cpu requests |
-| osccost.deployment.containers.resources.ephemeralstorage.limits | string | `"200Mi"` | Container ephemeralstorage limts |
+| osccost.deployment.containers.resources.ephemeralstorage.limits | string | `"200Mi"` | Container ephemeralstorage limits |
 | osccost.deployment.containers.resources.ephemeralstorage.requests | string | `"100Mi"` | Container ephemeralstorage requests |
 | osccost.deployment.containers.resources.memory.limits | string | `"900Mi"` | Container memory limits |
 | osccost.deployment.containers.resources.memory.requests | string | `"600Mi"` | Container memory requests |
@@ -24,6 +24,7 @@ Exporter prometheus to allow Outscale users to estimate their cloud costs.
 | osccost.deployment.containers.securityContext.runAsUser | int | `65535` | Run as user |
 | osccost.deployment.containers.osccostExtraParams | string | `""` | Allow to pass extra parameters to osc-cost command (for example "--skip-resource Oos") |
 | osccost.deployment.enable | bool | `true` | enable deployment |
+| osccost.deployment.imagePullSecrets | string | `"regcred"` | specify pull secrets |
 | osccost.ingress.enable | bool | `true` | enable ingress |
 | osccost.ingress.enableTls | bool | `false` | enable Tls |
 | osccost.ingress.hostnameosccost | string | `"osc-cost.outscale.com"` | Add hostname |
