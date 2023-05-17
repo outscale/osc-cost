@@ -1,6 +1,6 @@
 # osccost
 
-![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
+![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.3.0](https://img.shields.io/badge/AppVersion-0.3.0-informational?style=flat-square)
 
 Exporter prometheus to allow Outscale users to estimate their cloud costs.
 
@@ -9,7 +9,7 @@ Exporter prometheus to allow Outscale users to estimate their cloud costs.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | osccost.deployment.containers.image | string | `"outscale/osc-cost"` | Outscale provider image |
-| osccost.deployment.containers.imageTag | string | `"v0.2.0"` | Outscale provider image tag |
+| osccost.deployment.containers.imageTag | string | `"v0.3.0"` | Outscale provider image tag |
 | osccost.deployment.containers.pullPolicy | string | `"Always"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
 | osccost.deployment.containers.resources.cpu.limits | string | `"600m"` | Container cpu limts |
 | osccost.deployment.containers.resources.cpu.requests | string | `"300m"` | Container cpu requests |
@@ -22,6 +22,7 @@ Exporter prometheus to allow Outscale users to estimate their cloud costs.
 | osccost.deployment.containers.securityContext.readOnlyRootFilesystem | bool | `false` | Set read only rootfs |
 | osccost.deployment.containers.securityContext.runAsGroup | int | `65535` | Run as group |
 | osccost.deployment.containers.securityContext.runAsUser | int | `65535` | Run as user |
+| osccost.deployment.containers.osccost-extra-params | string | `""` | Allow to pass extra parameters to osc-cost command (for example "--skip-resource Oos") |
 | osccost.deployment.enable | bool | `true` | enable deployment |
 | osccost.ingress.enable | bool | `true` | enable ingress |
 | osccost.ingress.enableTls | bool | `false` | enable Tls |

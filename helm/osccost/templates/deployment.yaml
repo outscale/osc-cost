@@ -46,6 +46,10 @@ spec:
                 secretKeyRef:
                   name: {{ template "osccost.secret" $root }}
                   key: OSC_REGION
+            {{- if .containers.osccost-extra-params }}
+            - name: OSCCOST_EXTRA_PARAMS
+              value: "{{ .containers.osccost-extra-params }}"
+            {{- end }}
           ports:
             - name: http-metrics
               containerPort: 8080
@@ -68,7 +72,7 @@ spec:
             exec:
               command:
               - /usr/local/bin/osc-cost
-        {{- if.containers.resources }}
+        {{- if .containers.resources }}
           resources:
             requests:
               memory: {{ .containers.resources.memory.requests | default "600Mi" | quote }}
