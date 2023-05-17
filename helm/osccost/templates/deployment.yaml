@@ -46,7 +46,7 @@ spec:
                 secretKeyRef:
                   name: {{ template "osccost.secret" $root }}
                   key: OSC_REGION
-            {{- if .containers.osccost-extra-params }}
+            {{- if .containers.osccostExtraParams }}
             - name: OSCCOST_EXTRA_PARAMS
               value: "{{ .containers.osccostExtraParams }}"
             {{- end }}
