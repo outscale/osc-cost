@@ -36,7 +36,8 @@ osccost:
   deployment:
     # -- enable deployment
     enable: True
-    registry_credential: ""
+    # -- specify pull secrets
+    imagePullSecrets: []
     containers:
     # -- Outscale provider image
       image: outscale/osc-cost
@@ -72,5 +73,5 @@ osccost:
           requests: 100Mi
     # -- Container ephemeralstorage limits
           limits: 200Mi
-    # -- Container env extra params for osc-cost command
+    # -- Allow to pass extra parameters to osc-cost command (for example "--skip-resource Oos")
       osccostExtraParams: ""

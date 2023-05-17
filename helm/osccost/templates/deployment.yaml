@@ -60,18 +60,20 @@ spec:
             successThreshold: 1
             failureThreshold: 10
             timeoutSeconds: 10
-            exec:
-              command:
-              - /usr/local/bin/osc-cost 
+            httpGet:
+              path: /metrics
+              port: 8080
+              scheme: HTTP
           readinessProbe:
             initialDelaySeconds: 30
             periodSeconds: 20
             successThreshold: 1
             failureThreshold: 10
             timeoutSeconds: 10
-            exec:
-              command:
-              - /usr/local/bin/osc-cost
+            httpGet:
+              path: /metrics
+              port: 8080
+              scheme: HTTP
         {{- if .containers.resources }}
           resources:
             requests:
@@ -91,6 +93,6 @@ spec:
           {{- end }}
         {{- end }}
       imagePullSecrets:
-      - name: {{ .registry_credential | default "regcred" }}
+      - name: {{ .imagePullSecrets | default "regcred" }}
   {{- end }}
 {{- end }}
