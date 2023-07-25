@@ -55,25 +55,21 @@ spec:
               containerPort: 8080
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 30
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
             periodSeconds: 20
             successThreshold: 1
-            failureThreshold: 10
-            timeoutSeconds: 10
-            httpGet:
-              path: /metrics
-              port: 8080
-              scheme: HTTP
+            failureThreshold: 3
           readinessProbe:
-            initialDelaySeconds: 30
-            periodSeconds: 20
-            successThreshold: 1
-            failureThreshold: 10
-            timeoutSeconds: 10
-            httpGet:
-              path: /metrics
+            tcpSocket:
               port: 8080
-              scheme: HTTP
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
         {{- if .containers.resources }}
           resources:
             requests:
