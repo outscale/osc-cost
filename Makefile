@@ -39,8 +39,12 @@ reuse-test:
 
 .PHONY: docker-build
 docker-build: # Build docker image with the manager 
-	DOCKER_BUILDKIT=1 docker build -f helm/Dockerfile -t ${IMG} .
+	DOCKER_BUILDKIT=1 docker buildx build -f helm/Dockerfile --load -t ${IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+.PHONY: helm-docs
+helm-docs:
+	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.11.0

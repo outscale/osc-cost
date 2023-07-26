@@ -30,6 +30,7 @@ Gitub bot should have produced a new version and creating the new release tag sh
 If this is not the case:
 1. Be sure have the latest version from repository.
 2. `make test` and fix any issue.
-3. Update Cargo.toml and Cargo.lock with new version following [semantic versioning](https://semver.org/) and commit
-4. PR, review and merge
-5. Create new release
+3. `make helm-docs` to generate helm docs
+4. Update Cargo.toml and Cargo.lock with new version following [semantic versioning](https://semver.org/) and commit
+5. PR, review and merge
+6. Create new release

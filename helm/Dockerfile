@@ -36,13 +36,13 @@ RUN addgroup --gid $GROUP_ID $GROUP_NAME && \
     mkdir /home/osc-cost/.osc && \
     chown -R osc-cost:osc-cost /home/osc-cost/.osc
 ENV PATH="$PATH:/home/osc-cost/.local/bin"
-USER osc-cost
 WORKDIR /app
 COPY --chown=osc-cost:osc-cost ./helm/entrypoint.sh /app
 COPY --from=builder  /app/target/release/osc-cost /usr/local/bin
-
+RUN chown -R osc-cost:osc-cost /usr/local/bin/osc-cost
 ENV OSCCOST_EXTRA_PARAMS=''
 HEALTHCHECK CMD curl --fail http://localhost:8080/metrics || exit 1
 EXPOSE 8080
+USER osc-cost
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["8080", "/home/osc-cost/.osc/config.json", "/usr/local/bin/osc-cost", "--format=prometheus"]
