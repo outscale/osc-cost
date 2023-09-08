@@ -18,13 +18,13 @@ spec:
     - honorLabels: true
       targetPort: http-metrics
       interval: {{ .interval }}
-{{- if .Values.osccost.serviceMonitor.metricRelabelings }}
+{{- if .metricRelabelings }}
       metricRelabelings:
-{{ tpl (toYaml .Values.osccost.serviceMonitor.metricRelabelings | indent 8) . }}
+{{ tpl (toYaml .metricRelabelings | indent 8) . }}
 {{- end }}
-{{- if .Values.osccost.serviceMonitor.relabelings }}
+{{- if .relabelings }}
       relabelings:
-{{ toYaml .Values.osccost.serviceMonitor.relabelings | indent 8 }}
+{{ toYaml .relabelings | indent 8 }}
 {{- end }}
   namespaceSelector:
     matchNames:
