@@ -67,7 +67,7 @@ impl Input {
             return Ok(());
         }
         let Some(buckets) = self.list_buckets().await else {
-            return Ok(())
+            return Ok(());
         };
 
         for bucket in &buckets {
@@ -85,9 +85,10 @@ impl Input {
     }
 
     pub fn fill_resource_oos(&self, resources: &mut Resources) {
-        let Some(price_gb_per_month) = self.catalog_entry("TinaOS-OOS", "enterprise", "OOSStorage") else {
+        let Some(price_gb_per_month) = self.catalog_entry("TinaOS-OOS", "enterprise", "OOSStorage")
+        else {
             warn!("gib price is not defined for oos");
-            return
+            return;
         };
         for (bucket_id, bucket) in &self.buckets {
             let size = ((bucket

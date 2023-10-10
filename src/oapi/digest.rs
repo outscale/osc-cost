@@ -134,13 +134,18 @@ impl Input {
                     };
 
                     // Extract product codes
-                    let Some(price_factor) = VmSpecs::compute_product_price_per_hour(cores, &product_code) else {
+                    let Some(price_factor) =
+                        VmSpecs::compute_product_price_per_hour(cores, &product_code)
+                    else {
                         warn!("Cannot extract price factor from product codes");
                         continue;
                     };
 
                     // CustomRam
-                    let Some(product_usage_catalog) = self.catalog.get(&format!("TinaOS-FCU/ProductUsage/RunInstances-{}-OD", product_code)) else {
+                    let Some(product_usage_catalog) = self.catalog.get(&format!(
+                        "TinaOS-FCU/ProductUsage/RunInstances-{}-OD",
+                        product_code
+                    )) else {
                         warn!("Cannot get product code entry");
                         continue;
                     };
@@ -178,19 +183,26 @@ impl Input {
                     };
 
                     let tina_type = String::from(&cap[1]);
-                    let Some((generation, vcpu, ram_gb, performance)) =  VmSpecs::parse_tina_type(&tina_type) else {
+                    let Some((generation, vcpu, ram_gb, performance)) =
+                        VmSpecs::parse_tina_type(&tina_type)
+                    else {
                         warn!("Cannot extract value from tina type {}", s);
-                            continue
-                        };
+                        continue;
+                    };
 
                     // CustomRam
-                    let Some(custom_ram_catalog) = self.catalog.get("TinaOS-FCU/CustomRam/RunInstances-OD") else {
+                    let Some(custom_ram_catalog) =
+                        self.catalog.get("TinaOS-FCU/CustomRam/RunInstances-OD")
+                    else {
                         warn!("Cannot get customRam entry");
                         continue;
                     };
 
                     // CustomCore
-                    let Some(custom_core_catalog) = self.catalog.get(&format!("TinaOS-FCU/CustomCore:v{}-p{}/RunInstances-OD",generation, performance)) else {
+                    let Some(custom_core_catalog) = self.catalog.get(&format!(
+                        "TinaOS-FCU/CustomCore:v{}-p{}/RunInstances-OD",
+                        generation, performance
+                    )) else {
                         warn!("Cannot get customCore entry");
                         continue;
                     };

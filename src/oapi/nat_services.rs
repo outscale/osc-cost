@@ -66,7 +66,7 @@ impl Input {
             let price_product_per_nat_service_per_hour =
                 self.catalog_entry("TinaOS-FCU", "NatGatewayUsage", "CreateNatGateway");
             let Some(nat_service_id) = &nat_service.nat_service_id else {
-                warn!("cannot get nat_service_id content for {}", nat_service_id );
+                warn!("cannot get nat_service_id content for {}", nat_service_id);
                 continue;
             };
             let core_nat_service = NatServices {

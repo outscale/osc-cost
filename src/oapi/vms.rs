@@ -285,13 +285,18 @@ impl VmSpecs {
 
     fn parse_product_price(mut self, input: &Input) -> Option<VmSpecs> {
         for product_code in &self.product_codes {
-            let Some(price) = input.catalog_entry("TinaOS-FCU", "ProductUsage", &format!("RunInstances-{product_code}-OD")) else {
+            let Some(price) = input.catalog_entry(
+                "TinaOS-FCU",
+                "ProductUsage",
+                &format!("RunInstances-{product_code}-OD"),
+            ) else {
                 continue;
             };
             // License calculation is specific to each product code.
             // https://en.outscale.com/pricing/#licenses
             let cores = self.vcpu as f32;
-            let Some(price_factor) = VmSpecs::compute_product_price_per_hour(cores, product_code) else {
+            let Some(price_factor) = VmSpecs::compute_product_price_per_hour(cores, product_code)
+            else {
                 warn!("product code {} is not managed", product_code);
                 continue;
             };
@@ -385,14 +390,14 @@ impl VmSpecs {
 
     pub fn parse_box_type(vm_type: &String, input: &Input) -> Option<(String, f32, f32, String)> {
         let vm_type_obj = input.vm_types.get(vm_type)?;
-        let Some(vcpu) = vm_type_obj.vcore_count  else {
-        warn!("vpcu is not defined for this vm type {}", vm_type);
-        return None;
-    };
+        let Some(vcpu) = vm_type_obj.vcore_count else {
+            warn!("vpcu is not defined for this vm type {}", vm_type);
+            return None;
+        };
         let Some(ram_gb) = vm_type_obj.memory_size else {
-        warn!("ram_gb is not defined for this vm type {}", vm_type);
-        return None;
-    };
+            warn!("ram_gb is not defined for this vm type {}", vm_type);
+            return None;
+        };
         // We don't have this information through API for now but we have it on public documentation:
         // https://docs.outscale.com/en/userguide/Instance-Types.html
         // format: m4.4xlarge

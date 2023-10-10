@@ -73,9 +73,11 @@ impl Input {
     }
 
     pub fn fill_resource_snapshot(&self, resources: &mut Resources) {
-        let Some(price_gb_per_month) = self.catalog_entry("TinaOS-FCU", "Snapshot:Usage", "Snapshot") else {
+        let Some(price_gb_per_month) =
+            self.catalog_entry("TinaOS-FCU", "Snapshot:Usage", "Snapshot")
+        else {
             warn!("gib price is not defined for snapshot");
-            return
+            return;
         };
         for (snapshot_id, snapshot) in &self.snapshots {
             let core_snapshot = Snapshot {

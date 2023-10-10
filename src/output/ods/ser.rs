@@ -387,7 +387,7 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
         T: ?Sized + Serialize,
     {
         let Some(sheet_state) = &mut self.sheet_state else {
-            return Err(Error::ExpectedStartStruct)
+            return Err(Error::ExpectedStartStruct);
         };
         if sheet_state.to_initialize {
             sheet_state.sheet.set_styled_value(
@@ -401,7 +401,7 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
         let res = value.serialize(&mut **self);
 
         let Some(sheet_state) = &mut self.sheet_state else {
-            return Err(Error::ExpectedStartStruct)
+            return Err(Error::ExpectedStartStruct);
         };
         sheet_state.col += 1;
 
@@ -410,7 +410,7 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
 
     fn end(self) -> Result<()> {
         let Some(sheet_state) = &self.sheet_state else {
-            return Err(Error::ExpectedStartStruct)
+            return Err(Error::ExpectedStartStruct);
         };
         self.sheets
             .insert(sheet_state.name.clone(), sheet_state.sheet.to_owned());

@@ -73,12 +73,18 @@ pub fn compute_drift(
                 let (digest_price, drift) = match digest.get(&osc_cost.aggregated_resource_type) {
                     Some(digest) => {
                         let Some(price) = digest.price else {
-                            warn!("the digest price for this resource {} has not been computed", &osc_cost.aggregated_resource_type);
+                            warn!(
+                                "the digest price for this resource {} has not been computed",
+                                &osc_cost.aggregated_resource_type
+                            );
                             continue;
                         };
 
                         let Some(mut osc_cost_price) = osc_cost.price_per_hour else {
-                            warn!("the osc_cost price for this resource {} has not been computed", &osc_cost.aggregated_resource_type);
+                            warn!(
+                                "the osc_cost price for this resource {} has not been computed",
+                                &osc_cost.aggregated_resource_type
+                            );
                             continue;
                         };
 
