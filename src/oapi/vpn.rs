@@ -62,11 +62,9 @@ impl Input {
     }
 
     pub fn fill_resource_vpns(&self, resources: &mut Resources) {
-        let Some(price_per_hour) = self.catalog_entry(
-            "TinaOS-FCU",
-            "ConnectionUsage",
-            "CreateVpnConnection",
-        ) else {
+        let Some(price_per_hour) =
+            self.catalog_entry("TinaOS-FCU", "ConnectionUsage", "CreateVpnConnection")
+        else {
             warn!("warning: could not retrieve the catalog for vpn");
             return;
         };

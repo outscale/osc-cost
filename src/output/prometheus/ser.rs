@@ -73,8 +73,8 @@ where
     let mut buffer = Vec::<u8>::new();
     let encoder = TextEncoder::new();
     let metric_families = registry.gather();
-    let Ok(_) = encoder.encode(&metric_families, &mut buffer)  else {
-        return Err(Error::Message("Can not encode ".to_string()))
+    let Ok(_) = encoder.encode(&metric_families, &mut buffer) else {
+        return Err(Error::Message("Can not encode ".to_string()));
     };
     Ok(String::from_utf8(buffer.clone()).unwrap_or_default())
 }
@@ -352,7 +352,7 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
         T: ?Sized + Serialize,
     {
         let Some(gauge_state) = &mut self.gauge_state else {
-            return Err(Error::ExpectedStartStruct)
+            return Err(Error::ExpectedStartStruct);
         };
         if self.filter_label.include.iter().any(|e| key.contains(e)) {
             gauge_state.label_key = key.to_string();
@@ -363,13 +363,13 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
 
     fn end(self) -> Result<()> {
         let Some(gauge_state) = &self.gauge_state else {
-            return Err(Error::ExpectedStartStruct)
+            return Err(Error::ExpectedStartStruct);
         };
         let Ok(gauge_primary) = Gauge::with_opts(gauge_state.gauge_primary_opt.clone()) else {
-            return Err(Error::Message("Can not create gauge_primary".to_string()))
+            return Err(Error::Message("Can not create gauge_primary".to_string()));
         };
         let Ok(gauge_secondary) = Gauge::with_opts(gauge_state.gauge_secondary_opt.clone()) else {
-            return Err(Error::Message("Can not create gauge_secondary".to_string()))
+            return Err(Error::Message("Can not create gauge_secondary".to_string()));
         };
         gauge_primary.add(gauge_state.primary_value.parse::<f64>().unwrap_or_default());
         gauge_secondary.add(

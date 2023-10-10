@@ -52,11 +52,9 @@ impl Input {
     }
 
     pub fn fill_resource_load_balancers(&self, resources: &mut Resources) {
-        let Some(price_per_hour) = self.catalog_entry(
-            "TinaOS-LBU",
-            "LBU:Usage",
-            "CreateLoadBalancer",
-        ) else {
+        let Some(price_per_hour) =
+            self.catalog_entry("TinaOS-LBU", "LBU:Usage", "CreateLoadBalancer")
+        else {
             warn!("warning: could not retrieve the catalog for load balancer");
             return;
         };
