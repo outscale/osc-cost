@@ -18,7 +18,7 @@ target/x86_64-unknown-linux-musl/release/osc-cost: src/*.rs
 	cargo build --target x86_64-unknown-linux-musl --release
 
 .PHONY: test
-test: cargo-test format-test integration-test reuse-test
+test: reuse-test cargo-test format-test integration-test
 	@echo all tests OK
 
 .PHONY: cargo-test
