@@ -10,6 +10,7 @@ pub type VolumeId = String;
 const RESOURCE_NAME: &str = "Volume";
 
 use crate::{
+    choose_default,
     core::{volumes::Volume, Resource, Resources},
     VERSION,
 };
@@ -60,7 +61,8 @@ impl Input {
     }
 
     pub fn fill_resource_volume(&self, resources: &mut Resources) {
-        for (volume_id, volume) in &self.volumes {
+        let volumes = &self.volumes;
+        for (volume_id, volume) in volumes {
             let specs = match VolumeSpecs::new(volume, self) {
                 Some(s) => s,
                 None => continue,
@@ -70,14 +72,54 @@ impl Input {
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(volume_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                volume_type: Some(specs.volume_type.clone()),
-                volume_iops: Some(specs.iops),
-                volume_size: Some(specs.size),
-                price_gb_per_month: specs.price_gb_per_month,
-                price_iops_per_month: specs.price_iops_per_month,
+                resource_id: choose_default!(
+                    volumes,
+                    Some("".to_string()),
+                    Some(volume_id.clone()),
+                    self.need_default_resource
+                ),
+                price_per_hour: choose_default!(
+                    volumes,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                price_per_month: choose_default!(
+                    volumes,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                volume_type: choose_default!(
+                    volumes,
+                    Some("".to_string()),
+                    Some(specs.volume_type.clone()),
+                    self.need_default_resource
+                ),
+                volume_iops: choose_default!(
+                    volumes,
+                    Some(0),
+                    Some(specs.iops),
+                    self.need_default_resource
+                ),
+                volume_size: choose_default!(
+                    volumes,
+                    Some(0),
+                    Some(specs.size),
+                    self.need_default_resource
+                ),
+                price_gb_per_month: choose_default!(
+                    volumes,
+                    0.0,
+                    specs.price_gb_per_month,
+                    self.need_default_resource
+                ),
+                price_iops_per_month: choose_default!(
+                    volumes,
+                    0.0,
+                    specs.price_gb_per_month,
+                    self.need_default_resource
+                ),
             };
             resources.resources.push(Resource::Volume(core_volume));
         }

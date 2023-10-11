@@ -7,6 +7,7 @@ use outscale_api::{
 };
 
 use crate::{
+    choose_default,
     core::{load_balancers::LoadBalancer, Resource, Resources},
     VERSION,
 };
@@ -58,15 +59,32 @@ impl Input {
             warn!("warning: could not retrieve the catalog for load balancer");
             return;
         };
-        for resource_id in &self.load_balancers {
+        let loadbalancers = &self.load_balancers;
+
+        for resource_id in loadbalancers {
             let core_resource = LoadBalancer {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(resource_id.clone()),
-                price_per_hour: Some(price_per_hour),
-                price_per_month: None,
+                resource_id: choose_default!(
+                    loadbalancers,
+                    Some("".to_string()),
+                    Some(resource_id.clone()),
+                    self.need_default_resource
+                ),
+                price_per_hour: choose_default!(
+                    loadbalancers,
+                    Some(0.0),
+                    Some(price_per_hour),
+                    self.need_default_resource
+                ),
+                price_per_month: choose_default!(
+                    loadbalancers,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
             };
             resources
                 .resources

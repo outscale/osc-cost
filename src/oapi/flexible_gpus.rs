@@ -7,6 +7,7 @@ use outscale_api::{
 };
 
 use crate::{
+    choose_default,
     core::{flexible_gpus::FlexibleGpu, Resource, Resources},
     VERSION,
 };
@@ -53,7 +54,8 @@ impl Input {
     }
 
     pub fn fill_resource_flexible_gpus(&self, resources: &mut Resources) {
-        for (flexible_gpu_id, flexible_gpu) in &self.flexible_gpus {
+        let flexible_gpus = &self.flexible_gpus;
+        for (flexible_gpu_id, flexible_gpu) in flexible_gpus {
             let Some(model_name) = flexible_gpu.model_name.clone() else {
                 warn!("warning: a flexible gpu did not have a model name");
                 continue;
@@ -88,16 +90,36 @@ impl Input {
                 );
                 continue;
             }
-
             let core_flexible_gpu = FlexibleGpu {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(flexible_gpu_id.clone()),
-                price_per_hour,
-                price_per_month: None,
-                model_name: Some(model_name),
+                resource_id: choose_default!(
+                    flexible_gpus,
+                    Some("".to_string()),
+                    Some(flexible_gpu_id.clone()),
+                    self.need_default_resource
+                ),
+                price_per_hour: choose_default!(
+                    flexible_gpus,
+                    Some(0.0),
+                    price_per_hour,
+                    self.need_default_resource
+                ),
+                price_per_month: choose_default!(
+                    flexible_gpus,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+
+                model_name: choose_default!(
+                    flexible_gpus,
+                    Some("".to_string()),
+                    Some(model_name),
+                    self.need_default_resource
+                ),
             };
             resources
                 .resources

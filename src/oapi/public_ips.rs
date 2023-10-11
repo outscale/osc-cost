@@ -7,6 +7,7 @@ use outscale_api::{
 };
 
 use crate::{
+    choose_default,
     core::{public_ips::PublicIp, Resource, Resources},
     VERSION,
 };
@@ -65,7 +66,8 @@ impl Input {
     }
 
     pub fn fill_resource_public_ip(&self, resources: &mut Resources) {
-        for (public_ip_id, public_ip) in &self.public_ips {
+        let public_ips = &self.public_ips;
+        for (public_ip_id, public_ip) in public_ips {
             let mut price_non_attached: Option<f32> = None;
             let mut price_first_ip: Option<f32> = None;
             let mut price_next_ips: Option<f32> = None;
@@ -127,12 +129,42 @@ impl Input {
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(public_ip_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                price_non_attached,
-                price_first_ip,
-                price_next_ips,
+                resource_id: choose_default!(
+                    public_ips,
+                    Some("".to_string()),
+                    Some(public_ip_id.clone()),
+                    self.need_default_resource
+                ),
+                price_per_hour: choose_default!(
+                    public_ips,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                price_per_month: choose_default!(
+                    public_ips,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                price_non_attached: choose_default!(
+                    public_ips,
+                    Some(0.0),
+                    price_non_attached,
+                    self.need_default_resource
+                ),
+                price_first_ip: choose_default!(
+                    public_ips,
+                    Some(0.0),
+                    price_first_ip,
+                    self.need_default_resource
+                ),
+                price_next_ips: choose_default!(
+                    public_ips,
+                    Some(0.0),
+                    price_next_ips,
+                    self.need_default_resource
+                ),
             };
             resources.resources.push(Resource::PublicIp(core_public_ip));
         }

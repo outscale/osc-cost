@@ -1,3 +1,12 @@
+use self::flexible_gpus::FlexibleGpuId;
+use self::load_balancers::LoadbalancerId;
+use self::nat_services::NatServiceId;
+use self::oos::{BucketId, OosBucket};
+use self::public_ips::PublicIpId;
+use self::snapshots::SnapshotId;
+use self::vms::VmId;
+use self::volumes::VolumeId;
+use self::vpn::VpnId;
 use crate::core::Resources;
 use crate::VERSION;
 use aws_config::SdkConfig;
@@ -29,16 +38,6 @@ use std::error;
 use std::error::Error;
 use std::thread::sleep;
 use std::time::Duration;
-
-use self::flexible_gpus::FlexibleGpuId;
-use self::load_balancers::LoadbalancerId;
-use self::nat_services::NatServiceId;
-use self::oos::{BucketId, OosBucket};
-use self::public_ips::PublicIpId;
-use self::snapshots::SnapshotId;
-use self::vms::VmId;
-use self::volumes::VolumeId;
-use self::vpn::VpnId;
 
 static THROTTLING_MIN_WAIT_MS: u64 = 1000;
 static THROTTLING_MAX_WAIT_MS: u64 = 10000;
@@ -80,6 +79,7 @@ pub struct Input {
     pub vm_types: HashMap<VmTypeName, VmType>,
     pub account: Option<Account>,
     pub region: Option<String>,
+    pub need_default_resource: bool,
     pub nat_services: HashMap<NatServiceId, NatService>,
     pub volumes: HashMap<VolumeId, Volume>,
     pub snapshots: HashMap<SnapshotId, Snapshot>,
@@ -113,6 +113,7 @@ impl Input {
             fetch_date: None,
             public_ips: HashMap::new(),
             filters: None,
+            need_default_resource: false,
             flexible_gpus: HashMap::new(),
             load_balancers: Vec::new(),
             vpns: Vec::new(),

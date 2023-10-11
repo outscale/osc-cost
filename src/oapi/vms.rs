@@ -13,6 +13,7 @@ use outscale_api::{
 };
 
 use crate::{
+    choose_default,
     core::{vms::Vm, Resource, Resources},
     oapi::ImageId,
     VERSION,
@@ -157,7 +158,8 @@ impl Input {
     }
 
     pub fn fill_resource_vm(&self, resources: &mut Resources) {
-        for (vm_id, vm) in &self.vms {
+        let vms = &self.vms;
+        for (vm_id, vm) in vms {
             let specs = match VmSpecs::new(vm, self) {
                 Some(s) => s,
                 None => {
@@ -170,24 +172,91 @@ impl Input {
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(vm_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                vm_type: vm.vm_type.clone(),
-                vm_vcpu_gen: Some(specs.generation.clone()),
-                vm_core_performance: vm.performance.clone(),
-                vm_image: vm.image_id.clone(),
-                vm_vcpu: specs.vcpu,
-                vm_ram_gb: specs.ram_gb,
-                price_vcpu_per_hour: specs.price_vcpu_per_hour,
-                price_ram_gb_per_hour: specs.price_ram_gb_per_hour,
+                resource_id: choose_default!(
+                    vms,
+                    Some("".to_string()),
+                    Some(vm_id.clone()),
+                    self.need_default_resource
+                ),
+                price_per_hour: choose_default!(vms, Some(0.0), None, self.need_default_resource),
+                price_per_month: choose_default!(vms, Some(0.0), None, self.need_default_resource),
+                vm_type: choose_default!(
+                    vms,
+                    Some("".to_string()),
+                    vm.vm_type.clone(),
+                    self.need_default_resource
+                ),
+
+                vm_vcpu_gen: choose_default!(
+                    vms,
+                    Some("".to_string()),
+                    Some(specs.generation.clone()),
+                    self.need_default_resource
+                ),
+                vm_core_performance: choose_default!(
+                    vms,
+                    Some("".to_string()),
+                    vm.performance.clone(),
+                    self.need_default_resource
+                ),
+
+                vm_image: choose_default!(
+                    vms,
+                    Some("".to_string()),
+                    vm.image_id.clone(),
+                    self.need_default_resource
+                ),
+
+                vm_vcpu: choose_default!(vms, usize::MIN, specs.vcpu, self.need_default_resource),
+
+                vm_ram_gb: choose_default!(vms, usize::MIN, specs.vcpu, self.need_default_resource),
+
+                price_vcpu_per_hour: choose_default!(
+                    vms,
+                    0.0,
+                    specs.price_vcpu_per_hour,
+                    self.need_default_resource
+                ),
+
+                price_ram_gb_per_hour: choose_default!(
+                    vms,
+                    0.0,
+                    specs.price_ram_gb_per_hour,
+                    self.need_default_resource
+                ),
+
                 // Mandatory to compute price for BoxUsage (aws-type, etc) types
-                price_box_per_hour: specs.price_box_per_hour,
+                price_box_per_hour: choose_default!(
+                    vms,
+                    0.0,
+                    specs.price_box_per_hour,
+                    self.need_default_resource
+                ),
                 // Mandatory to compute price for all vm types
-                price_license_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
-                price_license_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
-                price_license_per_vm_per_hour: specs.price_product_per_vm_per_hour,
-                license_codes: specs.product_codes.join(","),
+                price_license_per_ram_gb_per_hour: choose_default!(
+                    vms,
+                    0.0,
+                    specs.price_product_per_ram_gb_per_hour,
+                    self.need_default_resource
+                ),
+                price_license_per_cpu_per_hour: choose_default!(
+                    vms,
+                    0.0,
+                    specs.price_product_per_cpu_per_hour,
+                    self.need_default_resource
+                ),
+                price_license_per_vm_per_hour: choose_default!(
+                    vms,
+                    0.0,
+                    specs.price_product_per_vm_per_hour,
+                    self.need_default_resource
+                ),
+                license_codes: choose_default!(
+                    vms,
+                    "".to_string(),
+                    specs.product_codes.join(","),
+                    self.need_default_resource
+                ),
             };
             resources.resources.push(Resource::Vm(core_vm));
         }

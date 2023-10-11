@@ -6,6 +6,7 @@ use std::thread;
 use tokio_stream::StreamExt;
 
 use crate::{
+    choose_default,
     core::{oos::Oos, Resource, Resources},
     VERSION,
 };
@@ -90,7 +91,8 @@ impl Input {
             warn!("gib price is not defined for oos");
             return;
         };
-        for (bucket_id, bucket) in &self.buckets {
+        let buckets = &self.buckets;
+        for (bucket_id, bucket) in buckets {
             let size = ((bucket
                 .objects
                 .iter()
@@ -104,11 +106,36 @@ impl Input {
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(bucket_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                size_gb: Some(size),
-                price_gb_per_month,
+                resource_id: choose_default!(
+                    buckets,
+                    Some("".to_string()),
+                    Some(bucket_id.clone()),
+                    self.need_default_resource
+                ),
+                price_per_hour: choose_default!(
+                    buckets,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                price_per_month: choose_default!(
+                    buckets,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                size_gb: choose_default!(
+                    buckets,
+                    Some(0.0),
+                    Some(size),
+                    self.need_default_resource
+                ),
+                price_gb_per_month: choose_default!(
+                    buckets,
+                    0.0,
+                    price_gb_per_month,
+                    self.need_default_resource
+                ),
                 number_files: bucket.objects.len() as u32,
             };
             resources.resources.push(Resource::Oos(core_resource));

@@ -7,6 +7,7 @@ use outscale_api::{
 };
 
 use crate::{
+    choose_default,
     core::{snapshots::Snapshot, Resource, Resources},
     VERSION,
 };
@@ -79,17 +80,44 @@ impl Input {
             warn!("gib price is not defined for snapshot");
             return;
         };
-        for (snapshot_id, snapshot) in &self.snapshots {
+        let snapshosts = &self.snapshots;
+
+        for (snapshot_id, snapshot) in snapshosts {
             let core_snapshot = Snapshot {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(snapshot_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                volume_size_gib: snapshot.volume_size,
-                price_gb_per_month,
+                resource_id: choose_default!(
+                    snapshosts,
+                    Some("".to_string()),
+                    Some(snapshot_id.clone()),
+                    self.need_default_resource
+                ),
+                price_per_hour: choose_default!(
+                    snapshosts,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                price_per_month: choose_default!(
+                    snapshosts,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                volume_size_gib: choose_default!(
+                    snapshosts,
+                    Some(0),
+                    snapshot.volume_size,
+                    self.need_default_resource
+                ),
+                price_gb_per_month: choose_default!(
+                    snapshosts,
+                    0.0,
+                    price_gb_per_month,
+                    self.need_default_resource
+                ),
             };
             resources.resources.push(Resource::Snapshot(core_snapshot));
         }

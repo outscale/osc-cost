@@ -7,6 +7,7 @@ use outscale_api::{
 };
 
 use crate::{
+    choose_default,
     core::{nat_services::NatServices, Resource, Resources},
     VERSION,
 };
@@ -62,7 +63,8 @@ impl Input {
     }
 
     pub fn fill_resource_nat_service(&self, resources: &mut Resources) {
-        for (nat_service_id, nat_service) in &self.nat_services {
+        let nat_services = &self.nat_services;
+        for (nat_service_id, nat_service) in nat_services {
             let price_product_per_nat_service_per_hour =
                 self.catalog_entry("TinaOS-FCU", "NatGatewayUsage", "CreateNatGateway");
             let Some(nat_service_id) = &nat_service.nat_service_id else {
@@ -74,10 +76,30 @@ impl Input {
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(nat_service_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                price_product_per_nat_service_per_hour,
+                resource_id: choose_default!(
+                    nat_services,
+                    Some("".to_string()),
+                    Some(nat_service_id.clone()),
+                    self.need_default_resource
+                ),
+                price_per_hour: choose_default!(
+                    nat_services,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                price_per_month: choose_default!(
+                    nat_services,
+                    Some(0.0),
+                    None,
+                    self.need_default_resource
+                ),
+                price_product_per_nat_service_per_hour: choose_default!(
+                    nat_services,
+                    Some(0.0),
+                    price_product_per_nat_service_per_hour,
+                    self.need_default_resource
+                ),
             };
             resources
                 .resources
