@@ -79,19 +79,36 @@ impl Input {
             warn!("gib price is not defined for snapshot");
             return;
         };
-        for (snapshot_id, snapshot) in &self.snapshots {
+        let snapshosts = &self.snapshots;
+        if snapshosts.is_empty() && self.need_default_resource {
+            let zero = 0 as f32;
             let core_snapshot = Snapshot {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(snapshot_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                volume_size_gib: snapshot.volume_size,
-                price_gb_per_month,
+                resource_id: Some("".to_string()),
+                price_per_hour: Some(zero),
+                price_per_month: Some(zero),
+                volume_size_gib: Some(zero as i32),
+                price_gb_per_month: zero,
             };
             resources.resources.push(Resource::Snapshot(core_snapshot));
+        } else {
+            for (snapshot_id, snapshot) in &self.snapshots {
+                let core_snapshot = Snapshot {
+                    osc_cost_version: Some(String::from(VERSION)),
+                    account_id: self.account_id(),
+                    read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                    region: self.region.clone(),
+                    resource_id: Some(snapshot_id.clone()),
+                    price_per_hour: None,
+                    price_per_month: None,
+                    volume_size_gib: snapshot.volume_size,
+                    price_gb_per_month,
+                };
+                resources.resources.push(Resource::Snapshot(core_snapshot));
+            }
         }
     }
 }

@@ -90,28 +90,46 @@ impl Input {
             warn!("gib price is not defined for oos");
             return;
         };
-        for (bucket_id, bucket) in &self.buckets {
-            let size = ((bucket
-                .objects
-                .iter()
-                .map(|o| o.size())
-                .reduce(|o1, o2| o1 + o2)
-                .unwrap_or(0) as f64)
-                / 2_f64.powi(30)) as f32;
-
+        let buckets = &self.buckets;
+        if buckets.is_empty() && self.need_default_resource {
+            let zero = 0 as f32;
             let core_resource = Oos {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(bucket_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                size_gb: Some(size),
-                price_gb_per_month,
-                number_files: bucket.objects.len() as u32,
+                resource_id: Some("".to_string()),
+                price_per_hour: Some(zero),
+                price_per_month: Some(zero),
+                size_gb: Some(zero),
+                price_gb_per_month: zero,
+                number_files: zero as u32,
             };
             resources.resources.push(Resource::Oos(core_resource));
+        } else {
+            for (bucket_id, bucket) in &self.buckets {
+                let size = ((bucket
+                    .objects
+                    .iter()
+                    .map(|o| o.size())
+                    .reduce(|o1, o2| o1 + o2)
+                    .unwrap_or(0) as f64)
+                    / 2_f64.powi(30)) as f32;
+
+                let core_resource = Oos {
+                    osc_cost_version: Some(String::from(VERSION)),
+                    account_id: self.account_id(),
+                    read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                    region: self.region.clone(),
+                    resource_id: Some(bucket_id.clone()),
+                    price_per_hour: None,
+                    price_per_month: None,
+                    size_gb: Some(size),
+                    price_gb_per_month,
+                    number_files: bucket.objects.len() as u32,
+                };
+                resources.resources.push(Resource::Oos(core_resource));
+            }
         }
     }
 }

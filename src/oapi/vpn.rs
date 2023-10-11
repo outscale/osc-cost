@@ -68,17 +68,32 @@ impl Input {
             warn!("warning: could not retrieve the catalog for vpn");
             return;
         };
-        for resource_id in &self.vpns {
+        let vpns = &self.vpns;
+        if vpns.is_empty() && self.need_default_resource {
+            let zero = 0 as f32;
             let core_resource = Vpn {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(resource_id.clone()),
-                price_per_hour: Some(price_per_hour),
-                price_per_month: None,
+                resource_id: Some("".to_string()),
+                price_per_hour: Some(zero),
+                price_per_month: Some(zero),
             };
             resources.resources.push(Resource::Vpn(core_resource));
+        } else {
+            for resource_id in &self.vpns {
+                let core_resource = Vpn {
+                    osc_cost_version: Some(String::from(VERSION)),
+                    account_id: self.account_id(),
+                    read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                    region: self.region.clone(),
+                    resource_id: Some(resource_id.clone()),
+                    price_per_hour: Some(price_per_hour),
+                    price_per_month: None,
+                };
+                resources.resources.push(Resource::Vpn(core_resource));
+            }
         }
     }
 }

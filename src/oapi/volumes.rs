@@ -60,26 +60,48 @@ impl Input {
     }
 
     pub fn fill_resource_volume(&self, resources: &mut Resources) {
-        for (volume_id, volume) in &self.volumes {
-            let specs = match VolumeSpecs::new(volume, self) {
-                Some(s) => s,
-                None => continue,
-            };
+        let volumes = &self.volumes;
+        if volumes.is_empty() && self.need_default_resource {
+            let zero = 0 as f32;
             let core_volume = Volume {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
-                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                read_date_rfc3339: self
+                    .fetch_date
+                    .map(|date: chrono::DateTime<chrono::Utc>| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(volume_id.clone()),
-                price_per_hour: None,
-                price_per_month: None,
-                volume_type: Some(specs.volume_type.clone()),
-                volume_iops: Some(specs.iops),
-                volume_size: Some(specs.size),
-                price_gb_per_month: specs.price_gb_per_month,
-                price_iops_per_month: specs.price_iops_per_month,
+                resource_id: Some("".to_string()),
+                price_per_hour: Some(zero),
+                price_per_month: Some(zero),
+                volume_type: Some("".to_string()),
+                volume_iops: Some(zero as i32),
+                volume_size: Some(zero as i32),
+                price_gb_per_month: zero,
+                price_iops_per_month: zero,
             };
             resources.resources.push(Resource::Volume(core_volume));
+        } else {
+            for (volume_id, volume) in &self.volumes {
+                let specs = match VolumeSpecs::new(volume, self) {
+                    Some(s) => s,
+                    None => continue,
+                };
+                let core_volume = Volume {
+                    osc_cost_version: Some(String::from(VERSION)),
+                    account_id: self.account_id(),
+                    read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                    region: self.region.clone(),
+                    resource_id: Some(volume_id.clone()),
+                    price_per_hour: None,
+                    price_per_month: None,
+                    volume_type: Some(specs.volume_type.clone()),
+                    volume_iops: Some(specs.iops),
+                    volume_size: Some(specs.size),
+                    price_gb_per_month: specs.price_gb_per_month,
+                    price_iops_per_month: specs.price_iops_per_month,
+                };
+                resources.resources.push(Resource::Volume(core_volume));
+            }
         }
     }
 }

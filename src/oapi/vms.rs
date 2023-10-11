@@ -157,39 +157,70 @@ impl Input {
     }
 
     pub fn fill_resource_vm(&self, resources: &mut Resources) {
-        for (vm_id, vm) in &self.vms {
-            let specs = match VmSpecs::new(vm, self) {
-                Some(s) => s,
-                None => {
-                    warn!("error while creating the VMSpec of {}", vm_id);
-                    continue;
-                }
-            };
+        let vms = &self.vms;
+
+        if vms.is_empty() && self.need_default_resource {
+            let zero = 0 as f32;
             let core_vm = Vm {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(vm_id.clone()),
+                resource_id: Some("".to_string()),
                 price_per_hour: None,
                 price_per_month: None,
-                vm_type: vm.vm_type.clone(),
-                vm_vcpu_gen: Some(specs.generation.clone()),
-                vm_core_performance: vm.performance.clone(),
-                vm_image: vm.image_id.clone(),
-                vm_vcpu: specs.vcpu,
-                vm_ram_gb: specs.ram_gb,
-                price_vcpu_per_hour: specs.price_vcpu_per_hour,
-                price_ram_gb_per_hour: specs.price_ram_gb_per_hour,
+                vm_type: Some("".to_string()),
+                vm_vcpu_gen: Some("".to_string()),
+                vm_core_performance: Some("".to_string()),
+                vm_image: Some("".to_string()),
+                vm_vcpu: zero as usize,
+                vm_ram_gb: zero as usize,
+                price_vcpu_per_hour: zero,
+                price_ram_gb_per_hour: zero,
                 // Mandatory to compute price for BoxUsage (aws-type, etc) types
-                price_box_per_hour: specs.price_box_per_hour,
+                price_box_per_hour: zero,
                 // Mandatory to compute price for all vm types
-                price_license_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
-                price_license_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
-                price_license_per_vm_per_hour: specs.price_product_per_vm_per_hour,
-                license_codes: specs.product_codes.join(","),
+                price_license_per_ram_gb_per_hour: zero,
+                price_license_per_cpu_per_hour: zero,
+                price_license_per_vm_per_hour: zero,
+                license_codes: "".to_string(),
             };
             resources.resources.push(Resource::Vm(core_vm));
+        } else {
+            for (vm_id, vm) in &self.vms {
+                let specs = match VmSpecs::new(vm, self) {
+                    Some(s) => s,
+                    None => {
+                        warn!("error while creating the VMSpec of {}", vm_id);
+                        continue;
+                    }
+                };
+                let core_vm = Vm {
+                    osc_cost_version: Some(String::from(VERSION)),
+                    account_id: self.account_id(),
+                    read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                    region: self.region.clone(),
+                    resource_id: Some(vm_id.clone()),
+                    price_per_hour: None,
+                    price_per_month: None,
+                    vm_type: vm.vm_type.clone(),
+                    vm_vcpu_gen: Some(specs.generation.clone()),
+                    vm_core_performance: vm.performance.clone(),
+                    vm_image: vm.image_id.clone(),
+                    vm_vcpu: specs.vcpu,
+                    vm_ram_gb: specs.ram_gb,
+                    price_vcpu_per_hour: specs.price_vcpu_per_hour,
+                    price_ram_gb_per_hour: specs.price_ram_gb_per_hour,
+                    // Mandatory to compute price for BoxUsage (aws-type, etc) types
+                    price_box_per_hour: specs.price_box_per_hour,
+                    // Mandatory to compute price for all vm types
+                    price_license_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
+                    price_license_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
+                    price_license_per_vm_per_hour: specs.price_product_per_vm_per_hour,
+                    license_codes: specs.product_codes.join(","),
+                };
+                resources.resources.push(Resource::Vm(core_vm));
+            }
         }
     }
 }

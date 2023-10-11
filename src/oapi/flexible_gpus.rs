@@ -53,55 +53,74 @@ impl Input {
     }
 
     pub fn fill_resource_flexible_gpus(&self, resources: &mut Resources) {
-        for (flexible_gpu_id, flexible_gpu) in &self.flexible_gpus {
-            let Some(model_name) = flexible_gpu.model_name.clone() else {
-                warn!("warning: a flexible gpu did not have a model name");
-                continue;
-            };
-            let Some(state) = flexible_gpu.state.clone() else {
-                warn!("warning: a flexible gpu did not have a state");
-                continue;
-            };
-            let price_per_hour = match state.as_str() {
-                "attached" | "attaching" => self.catalog_entry(
-                    "TinaOS-FCU",
-                    format!("Gpu:attach:{model_name}").as_str(),
-                    "AllocateGpu",
-                ),
-                "allocated" | "detaching" => self.catalog_entry(
-                    "TinaOS-FCU",
-                    format!("Gpu:allocate:{model_name}").as_str(),
-                    "AllocateGpu",
-                ),
-                _ => {
-                    warn!("warning: a flexible gpus does not have standard state");
-                    continue;
-                }
-            };
+        let flexible_gpus = &self.flexible_gpus;
 
-            if price_per_hour.is_none() {
-                warn!(
-                    "{}",
-                    format!(
-                        "warning: could not retrieve the catalog for {model_name} in state {state}"
-                    )
-                );
-                continue;
-            }
-
+        if flexible_gpus.is_empty() && self.need_default_resource {
+            let zero = 0 as f32;
             let core_flexible_gpu = FlexibleGpu {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(flexible_gpu_id.clone()),
-                price_per_hour,
-                price_per_month: None,
-                model_name: Some(model_name),
+                resource_id: Some("".to_string()),
+                price_per_hour: Some(zero),
+                price_per_month: Some(zero),
+                model_name: Some("".to_string()),
             };
             resources
                 .resources
                 .push(Resource::FlexibleGpu(core_flexible_gpu));
+        } else {
+            for (flexible_gpu_id, flexible_gpu) in &self.flexible_gpus {
+                let Some(model_name) = flexible_gpu.model_name.clone() else {
+                    warn!("warning: a flexible gpu did not have a model name");
+                    continue;
+                };
+                let Some(state) = flexible_gpu.state.clone() else {
+                    warn!("warning: a flexible gpu did not have a state");
+                    continue;
+                };
+                let price_per_hour = match state.as_str() {
+                    "attached" | "attaching" => self.catalog_entry(
+                        "TinaOS-FCU",
+                        format!("Gpu:attach:{model_name}").as_str(),
+                        "AllocateGpu",
+                    ),
+                    "allocated" | "detaching" => self.catalog_entry(
+                        "TinaOS-FCU",
+                        format!("Gpu:allocate:{model_name}").as_str(),
+                        "AllocateGpu",
+                    ),
+                    _ => {
+                        warn!("warning: a flexible gpus does not have standard state");
+                        continue;
+                    }
+                };
+
+                if price_per_hour.is_none() {
+                    warn!(
+                        "{}",
+                        format!(
+                        "warning: could not retrieve the catalog for {model_name} in state {state}"
+                    )
+                    );
+                    continue;
+                }
+
+                let core_flexible_gpu = FlexibleGpu {
+                    osc_cost_version: Some(String::from(VERSION)),
+                    account_id: self.account_id(),
+                    read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                    region: self.region.clone(),
+                    resource_id: Some(flexible_gpu_id.clone()),
+                    price_per_hour,
+                    price_per_month: None,
+                    model_name: Some(model_name),
+                };
+                resources
+                    .resources
+                    .push(Resource::FlexibleGpu(core_flexible_gpu));
+            }
         }
     }
 }

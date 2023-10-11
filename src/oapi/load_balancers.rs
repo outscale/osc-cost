@@ -58,19 +58,36 @@ impl Input {
             warn!("warning: could not retrieve the catalog for load balancer");
             return;
         };
-        for resource_id in &self.load_balancers {
+        let loadbalancers = &self.load_balancers;
+        if loadbalancers.is_empty() && self.need_default_resource {
+            let zero = 0 as f32;
             let core_resource = LoadBalancer {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
                 read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
                 region: self.region.clone(),
-                resource_id: Some(resource_id.clone()),
-                price_per_hour: Some(price_per_hour),
-                price_per_month: None,
+                resource_id: Some("".to_string()),
+                price_per_hour: Some(zero),
+                price_per_month: Some(zero),
             };
             resources
                 .resources
                 .push(Resource::LoadBalancer(core_resource));
+        } else {
+            for resource_id in &self.load_balancers {
+                let core_resource = LoadBalancer {
+                    osc_cost_version: Some(String::from(VERSION)),
+                    account_id: self.account_id(),
+                    read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                    region: self.region.clone(),
+                    resource_id: Some(resource_id.clone()),
+                    price_per_hour: Some(price_per_hour),
+                    price_per_month: None,
+                };
+                resources
+                    .resources
+                    .push(Resource::LoadBalancer(core_resource));
+            }
         }
     }
 }

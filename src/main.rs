@@ -17,11 +17,13 @@ use std::process::exit;
 
 mod args;
 mod output;
-
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let args = args::parse().expect("unable to parse arguments");
-
+    let mut need_default_resource = false;
+    if args.need_default_resource {
+        need_default_resource = true;
+    }
     if args.help_resources {
         print_managed_resources_help();
     } else {
@@ -47,6 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         skip_resource: f.skip_resource,
                     }),
                 };
+                oapi_input.need_default_resource = need_default_resource;
                 oapi_input.fetch()?;
                 Resources::from(oapi_input)
             }

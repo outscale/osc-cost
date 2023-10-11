@@ -108,6 +108,64 @@ osc-cost --format=json
 ...
 ```
 
+```
+osc-cost -n --format=prometheus
+# HELP FlexibleGpu_price_hour FlexibleGpu price by hour
+# TYPE FlexibleGpu_price_hour gauge
+FlexibleGpu_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="FlexibleGpu"} 0
+# HELP FlexibleGpu_price_month FlexibleGpu price by month
+# TYPE FlexibleGpu_price_month gauge
+FlexibleGpu_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="FlexibleGpu"} 0
+# HELP LoadBalancer_price_hour LoadBalancer price by hour
+# TYPE LoadBalancer_price_hour gauge
+LoadBalancer_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="LoadBalancer"} 0
+# HELP LoadBalancer_price_month LoadBalancer price by month
+# TYPE LoadBalancer_price_month gauge
+LoadBalancer_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="LoadBalancer"} 0
+# HELP NatServices_price_hour NatServices price by hour
+# TYPE NatServices_price_hour gauge
+NatServices_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="NatServices"} 0
+# HELP NatServices_price_month NatServices price by month
+# TYPE NatServices_price_month gauge
+NatServices_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="NatServices"} 0
+# HELP Oos_price_hour Oos price by hour
+# TYPE Oos_price_hour gauge
+Oos_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Oos"} 0
+# HELP Oos_price_month Oos price by month
+# TYPE Oos_price_month gauge
+Oos_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Oos"} 0
+# HELP PublicIp_price_hour PublicIp price by hour
+# TYPE PublicIp_price_hour gauge
+PublicIp_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="PublicIp"} 0
+# HELP PublicIp_price_month PublicIp price by month
+# TYPE PublicIp_price_month gauge
+PublicIp_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="PublicIp"} 0
+# HELP Snapshot_price_hour Snapshot price by hour
+# TYPE Snapshot_price_hour gauge
+Snapshot_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Snapshot"} 0
+# HELP Snapshot_price_month Snapshot price by month
+# TYPE Snapshot_price_month gauge
+Snapshot_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Snapshot"} 0
+# HELP Vm_price_hour Vm price by hour
+# TYPE Vm_price_hour gauge
+Vm_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Vm"} 0
+# HELP Vm_price_month Vm price by month
+# TYPE Vm_price_month gauge
+Vm_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Vm"} 0
+# HELP Volume_price_hour Volume price by hour
+# TYPE Volume_price_hour gauge
+Volume_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Volume"} 0
+# HELP Volume_price_month Volume price by month
+# TYPE Volume_price_month gauge
+Volume_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Volume"} 0
+# HELP Vpn_price_hour Vpn price by hour
+# TYPE Vpn_price_hour gauge
+Vpn_price_hour{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Vpn"} 0
+# HELP Vpn_price_month Vpn price by month
+# TYPE Vpn_price_month gauge
+Vpn_price_month{account_id="040667503696",osc_cost_version="0.3.3",region="cloudgouv-eu-west-1",resource_id="",resource_type="Vpn"} 0
+```
+
 
 > **_NOTE:_** The next feature is still in beta
 
