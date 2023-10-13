@@ -21,7 +21,7 @@ COPY Cargo.* /app
 COPY src/ /app/src
 RUN cargo build --release --bin osc-cost
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 LABEL maintainer="Outscale SAS"
 ENV USER_ID=65535
 ENV GROUP_ID=65535
