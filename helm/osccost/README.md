@@ -9,7 +9,7 @@ Exporter prometheus to allow Outscale users to estimate their cloud costs.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | osccost.deployment.containers.image | string | `"outscale/osc-cost"` | Outscale provider image |
-| osccost.deployment.containers.imageTag | string | `"v0.3.3"` | Outscale provider image tag |
+| osccost.deployment.containers.imageTag | string | `"v0.3.4"` | Outscale provider image tag |
 | osccost.deployment.containers.osccostExtraParams | string | `""` |  |
 | osccost.deployment.containers.pullPolicy | string | `"Always"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
 | osccost.deployment.containers.resources.cpu.limits | string | `"600m"` | Container cpu limts |
