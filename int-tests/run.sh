@@ -117,8 +117,8 @@ ko_or_die "input as month should be an error" "$oc" --input output.month
 ko_or_die "--input with --source api" "$oc" --input somefile --source api
 
 # drift estimation
-previous_day=$(date "+%Y-%m-%d" --date='-9day')
-current_day=$(date "+%Y-%m-%d" --date='-8day')
+previous_day=$(date "+%Y-%m-%d" --date='-39day')
+current_day=$(date "+%Y-%m-%d" --date='-38day')
 ko_or_die "no dates for drift should be an error" "$oc" --compute-drift 
 ko_or_die "no from_date for drift should be an error" "$oc" --compute-drift --to-date "2023-04-05"
 ko_or_die "no to_date for drift should be an error" "$oc" --compute-drift --from-date "2023-04-05"
