@@ -28,7 +28,7 @@ ENV GROUP_ID=65535
 ENV USER_NAME=osc-cost
 ENV GROUP_NAME=osc-cost
 RUN --mount=type=cache,target=/var/cache/apt apt-get update && \
-   apt-get install -y jq=1.6-2.1 netcat=1.10-46 curl ca-certificates=20210119 --no-install-recommends &&\
+   apt-get install -y jq netcat curl ca-certificates --no-install-recommends &&\
    apt-get clean --dry-run && \
    rm -rf /var/lib/apt/lists/*
 RUN addgroup --gid $GROUP_ID $GROUP_NAME && \
