@@ -27,10 +27,8 @@ ENV USER_ID=65535
 ENV GROUP_ID=65535
 ENV USER_NAME=osc-cost
 ENV GROUP_NAME=osc-cost
-RUN --mount=type=cache,target=/var/cache/apt apt-get update && \
-   apt-get install -y jq netcat curl ca-certificates --no-install-recommends &&\
-   apt-get clean --dry-run && \
-   rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+   apt-get install -y jq netcat-traditional curl ca-certificates --no-install-recommends
 RUN addgroup --gid $GROUP_ID $GROUP_NAME && \
     adduser --shell /sbin/nologin  --gecos "${USER_NAME},0,0,0" --disabled-password --uid $USER_ID --ingroup $GROUP_NAME ${USER_NAME} && \
     mkdir /home/osc-cost/.osc && \
