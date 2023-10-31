@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use super::{ResourceError, ResourceTrait, HOURS_PER_MONTH};
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+use crate::VERSION;
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Vm {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
@@ -47,6 +49,33 @@ impl ResourceTrait for Vm {
         match self.price_per_hour {
             Some(price) => Ok(price),
             None => Err(ResourceError::NotComputed),
+        }
+    }
+}
+
+impl Default for Vm {
+    fn default() -> Self {
+        Self {
+            osc_cost_version: Some(String::from(VERSION)),
+            account_id: Some("".to_string()),
+            read_date_rfc3339: Some("".to_string()),
+            region: Some("".to_string()),
+            resource_id: Some("".to_string()),
+            price_per_hour: Some(0.0),
+            price_per_month: Some(0.0),
+            vm_type: Some("".to_string()),
+            vm_vcpu_gen: Some("".to_string()),
+            vm_core_performance: Some("".to_string()),
+            vm_image: Some("".to_string()),
+            vm_vcpu: usize::MIN,
+            vm_ram_gb: usize::MIN,
+            price_vcpu_per_hour: 0.0,
+            price_ram_gb_per_hour: 0.0,
+            price_box_per_hour: 0.0,
+            price_license_per_ram_gb_per_hour: 0.0,
+            price_license_per_cpu_per_hour: 0.0,
+            price_license_per_vm_per_hour: 0.0,
+            license_codes: "".to_string(),
         }
     }
 }

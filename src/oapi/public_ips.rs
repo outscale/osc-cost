@@ -65,6 +65,14 @@ impl Input {
     }
 
     pub fn fill_resource_public_ip(&self, resources: &mut Resources) {
+        if self.public_ips.is_empty() && self.need_default_resource {
+            resources.resources.push(Resource::PublicIp(PublicIp {
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                ..Default::default()
+            }));
+        }
         for (public_ip_id, public_ip) in &self.public_ips {
             let mut price_non_attached: Option<f32> = None;
             let mut price_first_ip: Option<f32> = None;

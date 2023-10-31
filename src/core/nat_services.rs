@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 
 use super::{ResourceError, ResourceTrait, HOURS_PER_MONTH};
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+use crate::VERSION;
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct NatServices {
     pub osc_cost_version: Option<String>,
     pub account_id: Option<String>,
@@ -29,5 +31,20 @@ impl ResourceTrait for NatServices {
         self.price_per_hour = Some(price_per_hour);
         self.price_per_month = Some(price_per_hour * HOURS_PER_MONTH);
         Ok(())
+    }
+}
+
+impl Default for NatServices {
+    fn default() -> Self {
+        Self {
+            osc_cost_version: Some(String::from(VERSION)),
+            account_id: Some("".to_string()),
+            read_date_rfc3339: Some("".to_string()),
+            region: Some("".to_string()),
+            resource_id: Some("".to_string()),
+            price_per_hour: Some(0.0),
+            price_per_month: Some(0.0),
+            price_product_per_nat_service_per_hour: Some(0.0),
+        }
     }
 }

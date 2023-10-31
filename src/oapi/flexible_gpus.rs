@@ -53,6 +53,14 @@ impl Input {
     }
 
     pub fn fill_resource_flexible_gpus(&self, resources: &mut Resources) {
+        if self.flexible_gpus.is_empty() && self.need_default_resource {
+            resources.resources.push(Resource::FlexibleGpu(FlexibleGpu {
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                ..Default::default()
+            }));
+        }
         for (flexible_gpu_id, flexible_gpu) in &self.flexible_gpus {
             let Some(model_name) = flexible_gpu.model_name.clone() else {
                 warn!("warning: a flexible gpu did not have a model name");

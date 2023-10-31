@@ -60,6 +60,14 @@ impl Input {
     }
 
     pub fn fill_resource_volume(&self, resources: &mut Resources) {
+        if self.volumes.is_empty() && self.need_default_resource {
+            resources.resources.push(Resource::Volume(Volume {
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                ..Default::default()
+            }));
+        }
         for (volume_id, volume) in &self.volumes {
             let specs = match VolumeSpecs::new(volume, self) {
                 Some(s) => s,

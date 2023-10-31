@@ -62,6 +62,14 @@ impl Input {
     }
 
     pub fn fill_resource_vpns(&self, resources: &mut Resources) {
+        if self.vpns.is_empty() && self.need_default_resource {
+            resources.resources.push(Resource::Vpn(Vpn {
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                ..Default::default()
+            }));
+        }
         let Some(price_per_hour) =
             self.catalog_entry("TinaOS-FCU", "ConnectionUsage", "CreateVpnConnection")
         else {

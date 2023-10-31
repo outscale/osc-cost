@@ -157,6 +157,14 @@ impl Input {
     }
 
     pub fn fill_resource_vm(&self, resources: &mut Resources) {
+        if self.vms.is_empty() && self.need_default_resource {
+            resources.resources.push(Resource::Vm(Vm {
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                ..Default::default()
+            }));
+        }
         for (vm_id, vm) in &self.vms {
             let specs = match VmSpecs::new(vm, self) {
                 Some(s) => s,
