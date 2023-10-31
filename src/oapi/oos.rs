@@ -85,6 +85,14 @@ impl Input {
     }
 
     pub fn fill_resource_oos(&self, resources: &mut Resources) {
+        if self.buckets.is_empty() && self.need_default_resource {
+            resources.resources.push(Resource::Oos(Oos {
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                ..Default::default()
+            }));
+        }
         let Some(price_gb_per_month) = self.catalog_entry("TinaOS-OOS", "enterprise", "OOSStorage")
         else {
             warn!("gib price is not defined for oos");

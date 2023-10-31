@@ -62,6 +62,14 @@ impl Input {
     }
 
     pub fn fill_resource_nat_service(&self, resources: &mut Resources) {
+        if self.nat_services.is_empty() && self.need_default_resource {
+            resources.resources.push(Resource::NatServices(NatServices {
+                account_id: self.account_id(),
+                read_date_rfc3339: self.fetch_date.map(|date| date.to_rfc3339()),
+                region: self.region.clone(),
+                ..Default::default()
+            }));
+        }
         for (nat_service_id, nat_service) in &self.nat_services {
             let price_product_per_nat_service_per_hour =
                 self.catalog_entry("TinaOS-FCU", "NatGatewayUsage", "CreateNatGateway");
