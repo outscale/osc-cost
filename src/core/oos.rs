@@ -42,7 +42,7 @@ impl Default for Oos {
             account_id: Some("".to_string()),
             read_date_rfc3339: Some("".to_string()),
             region: Some("".to_string()),
-            resource_id: Some("".to_string()),
+            resource_id: None,
             price_per_hour: Some(0.0),
             price_per_month: Some(0.0),
             size_gb: Some(0.0),
