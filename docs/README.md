@@ -122,6 +122,11 @@ The tools can also be used to see the drift between osc-cost estimation and what
     osc-cost --compute-drift --from-date "$(date "+%Y-%m-%d" --date='-1day') --to-date $(date "+%Y-%m-%d") --input account.json
   ```
 
+In order to have default values in prometheus format please use:
+```
+osc-cost -n --format=prometheus
+```
+
 You will have the details of the drift.
 ```
 ╭───────────────┬──────────┬────────┬───────╮
