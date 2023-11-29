@@ -23,8 +23,9 @@ pub struct Volume {
 impl ResourceTrait for Volume {
     fn compute(&mut self) -> Result<(), ResourceError> {
         let mut price_per_month = 0_f32;
-        price_per_month += (self.volume_size.unwrap() as f32) * self.price_gb_per_month;
-        price_per_month += (self.volume_iops.unwrap() as f32) * self.price_iops_per_month;
+        price_per_month += (self.volume_size.unwrap_or_default() as f32) * self.price_gb_per_month;
+        price_per_month +=
+            (self.volume_iops.unwrap_or_default() as f32) * self.price_iops_per_month;
         self.price_per_hour = Some(price_per_month / HOURS_PER_MONTH);
         self.price_per_month = Some(price_per_month);
         Ok(())

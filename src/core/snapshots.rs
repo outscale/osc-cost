@@ -21,7 +21,8 @@ impl ResourceTrait for Snapshot {
     fn compute(&mut self) -> Result<(), ResourceError> {
         let mut price_per_month = 0_f32;
         // The computation is not accurate as this size is maximally over-estimated.
-        price_per_month += (self.volume_size_gib.unwrap() as f32) * self.price_gb_per_month;
+        price_per_month +=
+            (self.volume_size_gib.unwrap_or_default() as f32) * self.price_gb_per_month;
         self.price_per_hour = Some(price_per_month / HOURS_PER_MONTH);
         self.price_per_month = Some(price_per_month);
         Ok(())
@@ -45,7 +46,7 @@ impl Default for Snapshot {
             resource_id: None,
             price_per_hour: Some(0.0),
             price_per_month: Some(0.0),
-            volume_size_gib: None,
+            volume_size_gib: Some(0),
             price_gb_per_month: 0.0,
         }
     }
