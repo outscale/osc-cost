@@ -17,7 +17,7 @@ pub struct FlexibleGpu {
 
 impl ResourceTrait for FlexibleGpu {
     fn compute(&mut self) -> Result<(), ResourceError> {
-        self.price_per_month = Some(self.price_per_hour.unwrap() * HOURS_PER_MONTH);
+        self.price_per_month = Some(self.price_per_hour.unwrap_or_default() * HOURS_PER_MONTH);
         Ok(())
     }
 
