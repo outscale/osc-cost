@@ -187,6 +187,7 @@ impl Input {
                 vm_image: vm.image_id.clone(),
                 vm_vcpu: specs.vcpu,
                 vm_ram_gb: specs.ram_gb,
+                nested_virtualization: vm.nested_virtualization,
                 price_vcpu_per_hour: specs.price_vcpu_per_hour,
                 price_ram_gb_per_hour: specs.price_ram_gb_per_hour,
                 // Mandatory to compute price for BoxUsage (aws-type, etc) types

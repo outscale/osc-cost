@@ -26,6 +26,7 @@ pub struct Vm {
     pub price_box_per_hour: f32,
     // Mandatory to compute price for all vm types
     pub price_license_per_ram_gb_per_hour: f32,
+    pub nested_virtualization: Option<bool>,
     pub price_license_per_cpu_per_hour: f32,
     pub price_license_per_vm_per_hour: f32,
     pub license_codes: String,
@@ -69,6 +70,7 @@ impl Default for Vm {
             vm_image: None,
             vm_vcpu: usize::MIN,
             vm_ram_gb: usize::MIN,
+            nested_virtualization: Some(false),
             price_vcpu_per_hour: 0.0,
             price_ram_gb_per_hour: 0.0,
             price_box_per_hour: 0.0,
