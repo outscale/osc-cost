@@ -1,0 +1,30 @@
+version: '3'
+services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+    networks:
+      - localprom
+    ports:
+      - 9090:9090
+  osc-cost:
+    image: outscale/osc-cost:v0.4.1
+    networks:
+      - localprom
+    ports:
+      - 8080:8080
+    # Replace with your AK/SK
+    # environment:
+     # OSC_ACCESS_KEY: OSC_ACCESS_KEY
+     # OSC_SECRET_KEY: OSC_SECRET_KEY
+     # OSC_REGION: OSC_REGION     
+  node-exporter:
+    image: prom/node-exporter
+    networks:
+      - localprom
+    ports:
+      - 9100:9100
+networks:
+  localprom:
+    driver: bridge
