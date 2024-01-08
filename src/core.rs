@@ -5,6 +5,7 @@ use std::error;
 use std::fmt;
 use strum_macros::EnumString;
 
+use self::dedicated_instances::DedicatedInstance;
 use self::flexible_gpus::FlexibleGpu;
 use self::load_balancers::LoadBalancer;
 use self::nat_services::NatServices;
@@ -17,6 +18,7 @@ use self::vpn::Vpn;
 
 static HOURS_PER_MONTH: f32 = (365_f32 * 24_f32) / 12_f32;
 
+pub mod dedicated_instances;
 pub mod digest;
 pub mod flexible_gpus;
 pub mod load_balancers;
@@ -41,6 +43,7 @@ pub enum Resource {
     LoadBalancer(LoadBalancer),
     Vpn(Vpn),
     Oos(Oos),
+    DedicatedInstance(DedicatedInstance),
 }
 
 pub struct Resources {
@@ -61,6 +64,7 @@ impl Resources {
                 Resource::LoadBalancer(load_balancer) => load_balancer.compute()?,
                 Resource::Vpn(vpn) => vpn.compute()?,
                 Resource::Oos(oos) => oos.compute()?,
+                Resource::DedicatedInstance(dedicated_instance) => dedicated_instance.compute()?,
             }
         }
         Ok(())
@@ -132,6 +136,9 @@ impl Resources {
                 }
                 Resource::Oos(oos) => {
                     total += oos.price_per_hour()?;
+                }
+                Resource::DedicatedInstance(dedicated_instance) => {
+                    total += dedicated_instance.price_per_hour()?;
                 }
             }
         }
@@ -243,6 +250,16 @@ impl From<Resource> for Aggregate {
                 price_per_hour: nat_service.price_per_hour,
                 price_per_month: nat_service.price_per_month,
                 aggregated_resource_type: "NatServices".to_string(),
+                count: 1,
+            },
+            Resource::DedicatedInstance(dedicated_instance) => Aggregate {
+                osc_cost_version: dedicated_instance.osc_cost_version,
+                account_id: dedicated_instance.account_id,
+                read_date_rfc3339: dedicated_instance.read_date_rfc3339,
+                region: dedicated_instance.region,
+                price_per_hour: dedicated_instance.price_per_hour,
+                price_per_month: dedicated_instance.price_per_month,
+                aggregated_resource_type: "DedicatedInstance".to_string(),
                 count: 1,
             },
             Resource::Aggregate(aggregate) => aggregate,
