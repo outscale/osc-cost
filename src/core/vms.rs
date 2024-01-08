@@ -26,7 +26,10 @@ pub struct Vm {
     pub price_box_per_hour: f32,
     // Mandatory to compute price for all vm types
     pub price_license_per_ram_gb_per_hour: f32,
-    pub nested_virtualization: Option<bool>,
+    // Mandatory to compute price for dedicated instance
+    pub price_dedicated_vm_additional_per_hour: f32,
+    pub nested_virtualization: bool,
+    pub tenancy: String,
     pub price_license_per_cpu_per_hour: f32,
     pub price_license_per_vm_per_hour: f32,
     pub license_codes: String,
@@ -48,7 +51,10 @@ impl ResourceTrait for Vm {
 
     fn price_per_hour(&self) -> Result<f32, ResourceError> {
         match self.price_per_hour {
-            Some(price) => Ok(price),
+            Some(price) => match self.nested_virtualization {
+                true => Ok(price + ((price * self.price_dedicated_vm_additional_per_hour) / 100.0)),
+                false => Ok(price),
+            },
             None => Err(ResourceError::NotComputed),
         }
     }
@@ -70,13 +76,15 @@ impl Default for Vm {
             vm_image: None,
             vm_vcpu: usize::MIN,
             vm_ram_gb: usize::MIN,
-            nested_virtualization: Some(false),
+            nested_virtualization: false,
+            tenancy: "default".to_string(),
             price_vcpu_per_hour: 0.0,
             price_ram_gb_per_hour: 0.0,
             price_box_per_hour: 0.0,
             price_license_per_ram_gb_per_hour: 0.0,
             price_license_per_cpu_per_hour: 0.0,
             price_license_per_vm_per_hour: 0.0,
+            price_dedicated_vm_additional_per_hour: 0.0,
             license_codes: "".to_string(),
         }
     }

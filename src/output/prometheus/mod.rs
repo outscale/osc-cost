@@ -14,6 +14,8 @@ pub fn prometheus(resources: &Resources) -> error::Result<String> {
         "resource_id".to_string(),
         "price_per_hour".to_string(),
         "price_per_month".to_string(),
+        "nested_virtualization".to_string(),
+        "tenancy".to_string(),
     ];
 
     let primary_name = "_price_hour".to_string();

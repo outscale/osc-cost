@@ -173,6 +173,9 @@ impl Input {
                     continue;
                 }
             };
+            let placement = vm.placement.clone().into_iter().next().unwrap_or_default();
+            let tenancy = placement.tenancy.unwrap_or_default();
+
             let core_vm = Vm {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
@@ -187,11 +190,15 @@ impl Input {
                 vm_image: vm.image_id.clone(),
                 vm_vcpu: specs.vcpu,
                 vm_ram_gb: specs.ram_gb,
-                nested_virtualization: vm.nested_virtualization,
+                nested_virtualization: vm.nested_virtualization.unwrap_or_default(),
+                tenancy: tenancy,
                 price_vcpu_per_hour: specs.price_vcpu_per_hour,
                 price_ram_gb_per_hour: specs.price_ram_gb_per_hour,
                 // Mandatory to compute price for BoxUsage (aws-type, etc) types
                 price_box_per_hour: specs.price_box_per_hour,
+                // Mandatory to compute price for dedicated instance
+                price_dedicated_vm_additional_per_hour: specs
+                    .price_dedicated_vm_additional_per_hour,
                 // Mandatory to compute price for all vm types
                 price_license_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
                 price_license_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
@@ -216,6 +223,7 @@ pub struct VmSpecs {
     price_product_per_ram_gb_per_hour: f32,
     price_product_per_cpu_per_hour: f32,
     price_product_per_vm_per_hour: f32,
+    price_dedicated_vm_additional_per_hour: f32,
 }
 
 impl VmSpecs {
@@ -240,16 +248,19 @@ impl VmSpecs {
             price_product_per_ram_gb_per_hour: 0_f32,
             price_product_per_cpu_per_hour: 0_f32,
             price_product_per_vm_per_hour: 0_f32,
+            price_dedicated_vm_additional_per_hour: 0_f32,
         };
         match vm_type.starts_with("tina") {
             true => out
                 .internal_parse_tina_type()?
                 .parse_performance(vm.performance.clone())?
                 .parse_product_price(input)?
+                .parse_dedicated_instance_additional_prices(input)?
                 .parse_tina_prices(input),
             false => out
                 .internal_parse_box_type(input)?
                 .parse_product_price(input)?
+                .parse_dedicated_instance_additional_prices(input)?
                 .parse_box_prices(input),
         }
     }
@@ -375,6 +386,15 @@ impl VmSpecs {
             "TinaOS-FCU",
             &format!("BoxUsage:{}", self.vm_type),
             "RunInstances-OD",
+        )?;
+        Some(self)
+    }
+
+    fn parse_dedicated_instance_additional_prices(mut self, input: &Input) -> Option<VmSpecs> {
+        self.price_dedicated_vm_additional_per_hour = input.catalog_entry(
+            "TinaOS-FCU",
+            &format!("DedicatedInstanceSurplus"),
+            "RunInstances",
         )?;
         Some(self)
     }
