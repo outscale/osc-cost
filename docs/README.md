@@ -19,6 +19,7 @@ Read license for more details.
   - Volumes
   - Public Ips
   - Snapshots (🚨 Warning: snapshot computation is currently known to be over-priced.)
+  - Dedicated Vm (🚨 Warning: dedicated vm computation can be overpriced depending on the situation (Look at example of Pricing for Dedicated VMs [Getting the Price of Your Resources](https://docs.outscale.com/en/userguide/Getting-the-Price-of-Your-Resources.html#_calculating_the_price_of_dedicated_vms)) .)
   - Load Balancers
   - Flexible GPU
   - VPN Connections

@@ -1,6 +1,6 @@
 use std::error;
 
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use outscale_api::{
     apis::{
         image_api::read_images,
@@ -160,7 +160,7 @@ impl Input {
         Ok(())
     }
 
-    pub fn fill_resource_vm(&self, resources: &mut Resources) {
+    pub fn fill_resource_vm(&mut self, resources: &mut Resources) {
         if self.vms.is_empty() && self.need_default_resource {
             resources.resources.push(Resource::Vm(Vm {
                 account_id: self.account_id(),
@@ -177,6 +177,24 @@ impl Input {
                     continue;
                 }
             };
+
+            let tenancy = match &vm.placement {
+                Some(placement) => placement.tenancy.clone().unwrap_or_default(),
+
+                None => {
+                    warn!("error to get tenancy");
+                    "".to_string()
+                }
+            };
+
+            match tenancy.as_str() {
+                "dedicated" => {
+                    warn!("use dedicated instance");
+                    self.use_dedicated_instance = false
+                }
+                _ => warn!("use default instance"),
+            };
+
             let core_vm = Vm {
                 osc_cost_version: Some(String::from(VERSION)),
                 account_id: self.account_id(),
@@ -191,11 +209,14 @@ impl Input {
                 vm_image: vm.image_id.clone(),
                 vm_vcpu: specs.vcpu,
                 vm_ram_gb: specs.ram_gb,
-                nested_virtualization: vm.nested_virtualization,
+                nested_virtualization: vm.nested_virtualization.unwrap_or_default(),
+                tenancy,
                 price_vcpu_per_hour: specs.price_vcpu_per_hour,
                 price_ram_gb_per_hour: specs.price_ram_gb_per_hour,
                 // Mandatory to compute price for BoxUsage (aws-type, etc) types
                 price_box_per_hour: specs.price_box_per_hour,
+                // Mandatory to compute price for dedicated instance
+                factor_vm_additional_cost: specs.factor_vm_additional_cost,
                 // Mandatory to compute price for all vm types
                 price_license_per_ram_gb_per_hour: specs.price_product_per_ram_gb_per_hour,
                 price_license_per_cpu_per_hour: specs.price_product_per_cpu_per_hour,
@@ -213,6 +234,7 @@ pub struct VmSpecs {
     vcpu: usize,
     ram_gb: usize,
     performance: String,
+    tenancy: String,
     product_codes: Vec<String>,
     price_vcpu_per_hour: f32,
     price_ram_gb_per_hour: f32,
@@ -220,6 +242,7 @@ pub struct VmSpecs {
     price_product_per_ram_gb_per_hour: f32,
     price_product_per_cpu_per_hour: f32,
     price_product_per_vm_per_hour: f32,
+    factor_vm_additional_cost: f32,
 }
 
 impl VmSpecs {
@@ -231,8 +254,17 @@ impl VmSpecs {
                 return None;
             }
         };
+        let tenancy = match &vm.placement {
+            Some(placement) => placement.tenancy.clone().unwrap_or_default(),
+            None => {
+                warn!("error to get tenancy");
+                "".to_string()
+            }
+        };
+
         let out = VmSpecs {
             vm_type: vm_type.clone(),
+            tenancy,
             generation: String::from(""),
             vcpu: 0,
             ram_gb: 0,
@@ -244,16 +276,19 @@ impl VmSpecs {
             price_product_per_ram_gb_per_hour: 0_f32,
             price_product_per_cpu_per_hour: 0_f32,
             price_product_per_vm_per_hour: 0_f32,
+            factor_vm_additional_cost: 0_f32,
         };
         match vm_type.starts_with("tina") {
             true => out
                 .internal_parse_tina_type()?
                 .parse_performance(vm.performance.clone())?
                 .parse_product_price(input)?
+                .parse_dedicated_instance_additional_prices(input)?
                 .parse_tina_prices(input),
             false => out
                 .internal_parse_box_type(input)?
                 .parse_product_price(input)?
+                .parse_dedicated_instance_additional_prices(input)?
                 .parse_box_prices(input),
         }
     }
@@ -380,6 +415,23 @@ impl VmSpecs {
             &format!("BoxUsage:{}", self.vm_type),
             "RunInstances-OD",
         )?;
+        Some(self)
+    }
+
+    fn parse_dedicated_instance_additional_prices(mut self, input: &Input) -> Option<VmSpecs> {
+        let dedicated_vm_additional =
+            input.catalog_entry("TinaOS-FCU", "DedicatedInstanceSurplus", "RunInstances")?;
+        self.factor_vm_additional_cost = match self.tenancy.as_str() {
+            "dedicated" => 1.0 + ((dedicated_vm_additional * 10000.0) / 100.0),
+            "default" => 1.0,
+            unkown_tenancy => {
+                error!(
+                    "vm additional costs for {} is not supported",
+                    unkown_tenancy
+                );
+                1.0
+            }
+        };
         Some(self)
     }
 

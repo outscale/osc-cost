@@ -26,7 +26,10 @@ pub struct Vm {
     pub price_box_per_hour: f32,
     // Mandatory to compute price for all vm types
     pub price_license_per_ram_gb_per_hour: f32,
-    pub nested_virtualization: Option<bool>,
+    // Mandatory to compute price for dedicated instance
+    pub factor_vm_additional_cost: f32,
+    pub nested_virtualization: bool,
+    pub tenancy: String,
     pub price_license_per_cpu_per_hour: f32,
     pub price_license_per_vm_per_hour: f32,
     pub license_codes: String,
@@ -41,12 +44,14 @@ impl ResourceTrait for Vm {
         price_per_hour += (self.vm_ram_gb as f32) * self.price_license_per_ram_gb_per_hour;
         price_per_hour += self.price_license_per_vm_per_hour;
         price_per_hour += self.price_box_per_hour;
-        self.price_per_hour = Some(price_per_hour);
+        self.price_per_hour = Some(price_per_hour * self.factor_vm_additional_cost);
         self.price_per_month = Some(price_per_hour * HOURS_PER_MONTH);
         Ok(())
     }
 
     fn price_per_hour(&self) -> Result<f32, ResourceError> {
+        // formula to calculate dedicated instance (https://docs.outscale.com/en/userguide/Getting-the-Price-of-Your-Resources.html)
+
         match self.price_per_hour {
             Some(price) => Ok(price),
             None => Err(ResourceError::NotComputed),
@@ -70,13 +75,15 @@ impl Default for Vm {
             vm_image: None,
             vm_vcpu: usize::MIN,
             vm_ram_gb: usize::MIN,
-            nested_virtualization: Some(false),
+            nested_virtualization: false,
+            tenancy: "default".to_string(),
             price_vcpu_per_hour: 0.0,
             price_ram_gb_per_hour: 0.0,
             price_box_per_hour: 0.0,
             price_license_per_ram_gb_per_hour: 0.0,
             price_license_per_cpu_per_hour: 0.0,
             price_license_per_vm_per_hour: 0.0,
+            factor_vm_additional_cost: 1.0,
             license_codes: "".to_string(),
         }
     }

@@ -52,6 +52,7 @@ type ImageId = String;
 type CatalogId = String;
 type VmTypeName = String;
 
+mod dedicated_instances;
 mod digest;
 mod flexible_gpus;
 mod load_balancers;
@@ -78,6 +79,7 @@ pub struct Input {
     pub vms_images: HashMap<ImageId, Image>,
     pub catalog: HashMap<CatalogId, CatalogEntry>,
     pub need_vm_types_fetch: bool,
+    pub use_dedicated_instance: bool,
     pub vm_types: HashMap<VmTypeName, VmType>,
     pub account: Option<Account>,
     pub region: Option<String>,
@@ -117,6 +119,7 @@ impl Input {
             public_ips: HashMap::new(),
             filters: None,
             flexible_gpus: HashMap::new(),
+            use_dedicated_instance: false,
             load_balancers: Vec::new(),
             vpns: Vec::new(),
             buckets: HashMap::new(),
@@ -197,6 +200,7 @@ impl Input {
         if self.need_vm_types_fetch {
             self.fetch_vm_types()?;
         }
+        self.fetch_dedicated_instances()?;
         self.fetch_account()?;
         self.fetch_region()?;
         self.fetch_volumes()?;
@@ -381,7 +385,7 @@ impl Input {
 }
 
 impl From<Input> for Resources {
-    fn from(input: Input) -> Self {
+    fn from(mut input: Input) -> Self {
         let mut resources = Resources {
             resources: Vec::new(),
         };
@@ -394,6 +398,7 @@ impl From<Input> for Resources {
         input.fill_resource_load_balancers(&mut resources);
         input.fill_resource_vpns(&mut resources);
         input.fill_resource_oos(&mut resources);
+        input.fill_resource_dedicated_instances(&mut resources);
         resources
     }
 }

@@ -1,6 +1,6 @@
 # osccost
 
-![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.4.2](https://img.shields.io/badge/AppVersion-0.4.2-informational?style=flat-square)
+![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.5.0](https://img.shields.io/badge/AppVersion-0.5.0-informational?style=flat-square)
 
 Exporter prometheus to allow Outscale users to estimate their cloud costs.
 
@@ -9,7 +9,7 @@ Exporter prometheus to allow Outscale users to estimate their cloud costs.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | osccost.deployment.containers.image | string | `"outscale/osc-cost"` | Outscale provider image |
-| osccost.deployment.containers.imageTag | string | `"v0.4.2"` | Outscale provider image tag |
+| osccost.deployment.containers.imageTag | string | `"v0.5.0"` | Outscale provider image tag |
 | osccost.deployment.containers.osccostExtraParams | string | `""` |  |
 | osccost.deployment.containers.pullPolicy | string | `"Always"` | ImagePullPolcy to use (IfNotPresent, Never, Always) |
 | osccost.deployment.containers.resources.cpu.limits | string | `"600m"` | Container cpu limts |
