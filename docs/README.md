@@ -157,6 +157,35 @@ git tag -a vX.X.X -m "vX.X.X"
 
 3. Make the release on Github
 
+# Osc-cost prometheus exporter output
+
+But what is prometheus ([Prometheus][Prometheus])
+
+We create a prometheus exporter ([Prometheus-Exporter][Prometheus-Exporter])
+
+To have something simple to manipulate we create a serde for prometheus. ([Serde][Serde])
+
+
+# How to deploy
+
+You can deploy with helm chart ([osc-cost][osc-cost])
+
+You can also deploy with docker-compose ([docker-compose][docker-compose])
+
+# Environment
+
+You need to have a config file.
+
+Test with an account with several cloud object.
+
+For prometheus, you can use docker-compose file in the projet to test with prometheus.
+
+Or you can test with k8s cluster.
+
+To test with k8s cluster, you can use kind but for me i create a cluster with one worker and one master using this project ([osc-k8s-rke-cluster][osc-k8s-rke-cluster])
+
+A account on outscale on eu-west-2/cloud-gouv or us-east-2. If you want on another region, please create omi on those region.
+
 # License
 
 > Copyright Outscale SAS
@@ -164,3 +193,12 @@ git tag -a vX.X.X -m "vX.X.X"
 > BSD-3-Clause
 
 This project is compliant with [REUSE](https://reuse.software/).
+
+<!-- References -->
+
+[Prometheus]: https://prometheus.io/
+[Prometheus-Exporter]: https://docs.rs/prometheus_exporter/latest/prometheus_exporter/
+[Serde]: https://serde.rs/
+[osc-cost]: https://github.com/outscale/osc-cost/tree/main/helm
+[docker-compose]: https://github.com/outscale/osc-cost/blob/main/helm/docker-compose.yaml
+[osc-k8s-rke-cluster]: https://github.com/outscale/osc-k8s-rke-cluster
