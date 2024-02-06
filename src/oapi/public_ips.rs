@@ -42,6 +42,8 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
+
         let public_ips = match result.public_ips {
             None => {
                 warn!("no public ip list provided");

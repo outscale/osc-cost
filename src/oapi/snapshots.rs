@@ -1,6 +1,6 @@
 use std::error;
 
-use log::warn;
+use log::{info, warn};
 use outscale_api::{
     apis::snapshot_api::read_snapshots,
     models::{FiltersSnapshot, ReadSnapshotsRequest, ReadSnapshotsResponse},
@@ -53,6 +53,7 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
 
         let snapshots = match result.snapshots {
             None => {

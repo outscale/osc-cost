@@ -43,6 +43,7 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
 
         let volumes = match result.volumes {
             None => {

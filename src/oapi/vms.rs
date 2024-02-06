@@ -52,6 +52,7 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
 
         let vms = match result.vms {
             None => {
@@ -108,6 +109,7 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
 
         let images = match result.images {
             None => {
@@ -134,6 +136,8 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
+
         let vm_types = match result.vm_types {
             None => {
                 warn!("no vm type list provided");

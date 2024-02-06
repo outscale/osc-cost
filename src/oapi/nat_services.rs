@@ -42,6 +42,8 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
+
         let nat_services = match result.nat_services {
             None => {
                 warn!("no nat_service available!");

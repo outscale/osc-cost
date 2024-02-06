@@ -1,6 +1,6 @@
 use std::error;
 
-use log::warn;
+use log::{info, warn};
 use outscale_api::{
     apis::vpn_connection_api::read_vpn_connections,
     models::{FiltersVpnConnection, ReadVpnConnectionsRequest, ReadVpnConnectionsResponse},
@@ -42,6 +42,7 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
 
         let resources = match result.vpn_connections {
             None => {
