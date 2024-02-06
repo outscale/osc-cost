@@ -1,6 +1,6 @@
 use std::error;
 
-use log::warn;
+use log::{info, warn};
 use outscale_api::{
     apis::flexible_gpu_api::read_flexible_gpus,
     models::{ReadFlexibleGpusRequest, ReadFlexibleGpusResponse},
@@ -33,7 +33,7 @@ impl Input {
             }
             break response?;
         };
-
+        info!("{:#?}", result);
         let flexible_gpus = match result.flexible_gpus {
             None => {
                 warn!("warning: no flexible gpu available");

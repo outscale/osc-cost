@@ -219,6 +219,7 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
 
         let catalog = match result.catalog {
             Some(catalog) => catalog,
@@ -275,6 +276,7 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
 
         let accounts = match result.accounts {
             None => {
@@ -304,6 +306,7 @@ impl Input {
             }
             break response?;
         };
+        info!("{:#?}", result);
 
         let subregions = match result.subregions {
             None => {
