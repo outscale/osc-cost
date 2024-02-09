@@ -1,6 +1,6 @@
 use std::error;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 use outscale_api::{
     apis::nat_service_api::read_nat_services,
     models::{FiltersNatService, ReadNatServicesRequest, ReadNatServicesResponse},
@@ -42,7 +42,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let nat_services = match result.nat_services {
             None => {

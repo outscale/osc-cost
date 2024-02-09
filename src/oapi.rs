@@ -5,6 +5,7 @@ use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_sdk_s3::{Credentials, Region};
 use chrono::{DateTime, Utc};
 use http::status::StatusCode;
+use log::debug;
 use log::{info, trace, warn};
 use outscale_api::apis::account_api::read_accounts;
 use outscale_api::apis::catalog_api::read_catalog;
@@ -219,7 +220,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let catalog = match result.catalog {
             Some(catalog) => catalog,
@@ -276,7 +277,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let accounts = match result.accounts {
             None => {

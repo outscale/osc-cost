@@ -1,6 +1,6 @@
 use std::error;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 use outscale_api::{
     apis::{
         image_api::read_images,
@@ -52,7 +52,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let vms = match result.vms {
             None => {
@@ -109,7 +109,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let images = match result.images {
             None => {
@@ -136,7 +136,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let vm_types = match result.vm_types {
             None => {

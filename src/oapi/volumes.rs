@@ -1,6 +1,6 @@
 use std::error;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 use outscale_api::{
     apis::volume_api::read_volumes,
     models::{FiltersVolume, ReadVolumesRequest, ReadVolumesResponse},
@@ -43,7 +43,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let volumes = match result.volumes {
             None => {

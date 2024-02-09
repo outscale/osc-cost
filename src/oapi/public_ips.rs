@@ -1,6 +1,6 @@
 use std::error;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 use outscale_api::{
     apis::public_ip_api::read_public_ips,
     models::{FiltersPublicIp, ReadPublicIpsRequest, ReadPublicIpsResponse},
@@ -42,7 +42,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let public_ips = match result.public_ips {
             None => {

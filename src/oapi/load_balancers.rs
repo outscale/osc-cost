@@ -1,6 +1,6 @@
 use std::error;
 
-use log::{info, warn};
+use log::{debug, warn};
 use outscale_api::{
     apis::load_balancer_api::read_load_balancers,
     models::{ReadLoadBalancersRequest, ReadLoadBalancersResponse},
@@ -32,7 +32,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let resources = match result.load_balancers {
             None => {
