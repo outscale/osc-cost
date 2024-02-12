@@ -419,10 +419,11 @@ impl VmSpecs {
     }
 
     fn parse_dedicated_instance_additional_prices(mut self, input: &Input) -> Option<VmSpecs> {
+        // dedicated_vm_additional is expressed as a percent
         let dedicated_vm_additional =
             input.catalog_entry("TinaOS-FCU", "DedicatedInstanceSurplus", "RunInstances")?;
         self.factor_vm_additional_cost = match self.tenancy.as_str() {
-            "dedicated" => 1.0 + ((dedicated_vm_additional * 10000.0) / 100.0),
+            "dedicated" => 1.0 + (dedicated_vm_additional * 100.0),
             "default" => 1.0,
             unkown_tenancy => {
                 error!(
