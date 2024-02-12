@@ -1,6 +1,6 @@
 [package]
 name = "osc-cost"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 authors = ["OpenSource Team <opensource@outscale.com>"]
 license = "BSD-3-Clause"
