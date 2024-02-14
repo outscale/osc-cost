@@ -419,12 +419,12 @@ impl VmSpecs {
     }
 
     fn parse_dedicated_instance_additional_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        // dedicated_vm_additional is expressed as a per thousand (‰)
+        // factor_dedicated_vm_additional_cost_per_thousand is expressed as a per thousand (‰)
         // The doc is here https://docs.outscale.com/en/userguide/Getting-the-Price-of-Your-Resources.html but seems wrong, the good formula is: Instance_price + ((Instance_price x Additional_price * 1000 )/100
-        let dedicated_vm_additional =
+        let factor_dedicated_vm_additional_cost_per_thousand =
             input.catalog_entry("TinaOS-FCU", "DedicatedInstanceSurplus", "RunInstances")?;
         self.factor_vm_additional_cost = match self.tenancy.as_str() {
-            "dedicated" => 1.0 + (dedicated_vm_additional * 10.0),
+            "dedicated" => 1.0 + (factor_dedicated_vm_additional_cost_per_thousand * 10.0),
             "default" => 1.0,
             unkown_tenancy => {
                 error!(
