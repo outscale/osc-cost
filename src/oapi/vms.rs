@@ -284,12 +284,12 @@ impl VmSpecs {
                 .parse_performance(vm.performance.clone())?
                 .parse_product_price(input)?
                 .parse_dedicated_instance_additional_prices(input)?
-                .parse_tina_prices(input),
+                .parse_prices(input),
             false => out
                 .internal_parse_box_type(input)?
                 .parse_product_price(input)?
                 .parse_dedicated_instance_additional_prices(input)?
-                .parse_box_prices(input),
+                .parse_prices(input),
         }
     }
 
@@ -384,7 +384,7 @@ impl VmSpecs {
         Some(self)
     }
 
-    fn parse_tina_prices(mut self, input: &Input) -> Option<VmSpecs> {
+    fn parse_prices(mut self, input: &Input) -> Option<VmSpecs> {
         let price_vcpu_per_hour = input.catalog_entry(
             "TinaOS-FCU",
             &format!("CustomCore:v{}-p{}", self.generation, self.performance),
@@ -406,15 +406,6 @@ impl VmSpecs {
                 None => return None,
             };
 
-        Some(self)
-    }
-
-    fn parse_box_prices(mut self, input: &Input) -> Option<VmSpecs> {
-        self.price_box_per_hour = input.catalog_entry(
-            "TinaOS-FCU",
-            &format!("BoxUsage:{}", self.vm_type),
-            "RunInstances-OD",
-        )?;
         Some(self)
     }
 
