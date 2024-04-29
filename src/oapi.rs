@@ -98,7 +98,7 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn new(profile_name: String) -> Result<Input, Box<dyn error::Error>> {
+    pub fn new(profile_name: Option<String>) -> Result<Input, Box<dyn error::Error>> {
         let (config, aws_config) = Input::get_config(profile_name)?;
         Ok(Input {
             config,
@@ -127,7 +127,21 @@ impl Input {
         })
     }
 
-    fn get_config(profile_name: String) -> Result<(Configuration, SdkConfig), Box<dyn Error>> {
+    fn get_config(profile: Option<String>) -> Result<(Configuration, SdkConfig), Box<dyn Error>> {
+        // Test if the 'profile' parameter is set
+        trace!("try to load api config parameter");
+        if let Some(profile_name) = profile {
+            let config_file = ConfigurationFile::load_default()?;
+            let mut config = config_file.configuration(&profile_name)?;
+            config.user_agent = Some(format!("osc-cost/{VERSION}"));
+
+            return Ok((
+                config,
+                Input::build_aws_config_from_file(&config_file, profile_name)?,
+            ));
+        }
+
+        // If not, check for environment variables
         trace!("try to load api config from environment variables");
         let ak_env = env::var("OSC_ACCESS_KEY").ok();
         let sk_env = env::var("OSC_SECRET_KEY").ok();
@@ -154,9 +168,12 @@ impl Input {
             }
         };
 
+        // If not, check 'default' profile
+        trace!("try to load default config from configuration file");
+        let profile_name = "default";
         trace!("try to load api config from configuration file");
         let config_file = ConfigurationFile::load_default()?;
-        let mut config = config_file.configuration(&profile_name)?;
+        let mut config = config_file.configuration(profile_name)?;
         config.user_agent = Some(format!("osc-cost/{VERSION}"));
 
         Ok((

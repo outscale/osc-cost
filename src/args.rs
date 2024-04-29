@@ -34,8 +34,8 @@ pub struct Drift {
 #[command(author, version, about, long_about=None)]
 pub struct Args {
     // Profile name to use in ~/.osc/config.json
-    #[arg(long, short = 'p', default_value_t = String::from("default"))]
-    pub profile: String,
+    #[arg(long, short = 'p')]
+    pub profile: Option<String>,
     #[arg(value_enum, long)]
     pub source: Option<InputSource>,
     #[arg(value_enum, long, default_value_t = OutputFormat::Human)]
