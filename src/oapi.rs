@@ -328,7 +328,7 @@ impl Input {
             }
             break response?;
         };
-        info!("{:#?}", result);
+        debug!("{:#?}", result);
 
         let subregions = match result.subregions {
             None => {
