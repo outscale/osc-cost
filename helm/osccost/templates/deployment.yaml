@@ -71,8 +71,14 @@ spec:
           {{- range $key, $val := .containers.securityContext }}
             {{ $key }}: {{ $val }}
           {{- end }}
+          volumeMounts:
+            - name: osc-cost-home
+              mountPath: /home/osc-cost/.osc
         {{- end }}
       imagePullSecrets:
       - name: {{ .imagePullSecrets | default "regcred" }}
+      volumes:
+        - name: osc-cost-home
+          emptyDir: {}
   {{- end }}
 {{- end }}
