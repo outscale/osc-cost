@@ -1,10 +1,11 @@
 osccost:
+  replicas: 1
   service:
     # -- enable service
     enable: True
   serviceMonitor:
-    # -- enable serviceMonitor 
-    enable: True 
+    # -- enable serviceMonitor
+    enable: True
     # -- scrape interval
     interval: 10m
     # -- MetricRelabelConfigs to apply to samples after scraping, but before ingestion

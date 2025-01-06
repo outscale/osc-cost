@@ -16,7 +16,7 @@ metadata:
 spec:
   endpoints:
     - honorLabels: true
-      targetPort: http-metrics
+      port: http-metrics
       interval: {{ .interval }}
 {{- if .metricRelabelings }}
       metricRelabelings:
