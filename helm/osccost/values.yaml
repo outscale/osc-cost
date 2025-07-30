@@ -68,7 +68,7 @@ osccost:
     # -- Run as group
         runAsGroup: 65535
     # -- Set read only rootfs
-        readOnlyRootFilesystem: false
+        readOnlyRootFilesystem: true
     # -- Manage resource
       resources:
         memory:
