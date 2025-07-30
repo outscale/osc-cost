@@ -13,7 +13,7 @@ metadata:
     app.kubernetes.io/version: "{{ $root.Chart.Version }}"
     app.kubernetes.io/managed-by: Helm
 spec:
-  replicas: {{ .repliaccount | default "1" }}
+  replicas: {{ .replicas | default "1" }}
   selector:
     matchLabels:
       app.kubernetes.io/name: "{{ $root.Release.Name }}"
@@ -75,8 +75,10 @@ spec:
             - name: osc-cost-home
               mountPath: /home/osc-cost/.osc
         {{- end }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-      - name: {{ .imagePullSecrets | default "regcred" }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: osc-cost-home
           emptyDir: {}

@@ -21,6 +21,6 @@ fi
 jq -n '{default: {"access_key": "$OSC_ACCESS_KEY", "secret_key": "$OSC_SECRET_KEY", "host": "outscale.com", "https": true, "method": "POST", "region": "$OSC_REGION"}}' > $2
 while true;
   do 
-    echo -e "HTTP/1.1 200 OK\n\n$($3 $4 $OSCCOST_EXTRA_PARAMS)" \
+    echo -e "HTTP/1.1 200 OK\nContent-Type: text/plain; version=0.0.4; charset=utf-8\n\n$($3 $4 $OSCCOST_EXTRA_PARAMS)" \
   | nc -l -k -p $1 -q 1;
 done
