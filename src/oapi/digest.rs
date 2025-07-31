@@ -143,8 +143,7 @@ impl Input {
 
                     // CustomRam
                     let Some(product_usage_catalog) = self.catalog.get(&format!(
-                        "TinaOS-FCU/ProductUsage/RunInstances-{}-OD",
-                        product_code
+                        "TinaOS-FCU/ProductUsage/RunInstances-{product_code}-OD",
                     )) else {
                         warn!("Cannot get product code entry");
                         continue;
@@ -200,8 +199,7 @@ impl Input {
 
                     // CustomCore
                     let Some(custom_core_catalog) = self.catalog.get(&format!(
-                        "TinaOS-FCU/CustomCore:v{}-p{}/RunInstances-OD",
-                        generation, performance
+                        "TinaOS-FCU/CustomCore:v{generation}-p{performance}/RunInstances-OD",
                     )) else {
                         warn!("Cannot get customCore entry");
                         continue;

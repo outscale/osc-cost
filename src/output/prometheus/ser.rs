@@ -118,7 +118,7 @@ impl Serializer {
     }
 }
 
-impl<'a> ser::Serializer for &'a mut Serializer {
+impl ser::Serializer for &mut Serializer {
     type Ok = ();
 
     type Error = Error;
@@ -319,9 +319,9 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         })
     }
 
-    fn collect_str<T: ?Sized>(self, value: &T) -> std::result::Result<Self::Ok, Self::Error>
+    fn collect_str<T>(self, value: &T) -> std::result::Result<Self::Ok, Self::Error>
     where
-        T: std::fmt::Display,
+        T: std::fmt::Display + ?Sized,
     {
         self.serialize_str(&value.to_string())
     }
@@ -343,7 +343,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 }
 
-impl<'a> ser::SerializeStruct for &'a mut Serializer {
+impl ser::SerializeStruct for &mut Serializer {
     type Ok = ();
     type Error = Error;
 
@@ -387,7 +387,7 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
     }
 }
 
-impl<'a> ser::SerializeSeq for &'a mut Serializer {
+impl ser::SerializeSeq for &mut Serializer {
     type Ok = ();
     type Error = Error;
 

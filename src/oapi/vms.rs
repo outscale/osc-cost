@@ -523,7 +523,7 @@ impl VmSpecs {
         // License calculation is specific to each product code.
         // https://en.outscale.com/pricing/#licenses
         let cores = vcpu;
-        return match product_code.as_str() {
+        match product_code.as_str() {
             // Generic Linux vm, should be free
             "0001" => Some(0.0),
             // Microsoft Windows Server 2019 License
@@ -549,6 +549,6 @@ impl VmSpecs {
                 warn!("product code {} is not managed", product_code);
                 None
             }
-        };
+        }
     }
 }
