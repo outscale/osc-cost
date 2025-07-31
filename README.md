@@ -183,7 +183,6 @@ docker-compose -f helm/docker-compose.yaml up
 ### On Kubernetes (Kind or RKE)
 
 You can deploy with any Kubernetes setup.
-We recommend [osc-k8s-rke-cluster](https://github.com/outscale/osc-k8s-rke-cluster) for multi-node clusters.
 
 ---
 
