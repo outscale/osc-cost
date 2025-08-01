@@ -2,11 +2,11 @@
 name = "osc-cost"
 version = "0.5.3"
 edition = "2021"
-authors = ["OpenSource Team <opensource@outscale.com>"]
+authors = ["Tooling Team <opensource@outscale.com>"]
 license = "BSD-3-Clause"
-description = "osc-cost helps measuring Outscale infrastructure costs"
+description = "osc-cost helps measuring OUTSCALE infrastructure costs"
 repository = "https://github.com/outscale/osc-cost"
-readme = "docs/README.md"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
