@@ -81,6 +81,8 @@ impl Input {
                             to_date: entry.to_date,
                             _type: entry._type,
                             value: Some(entry.value.unwrap_or(0.0) + e.value.unwrap_or(0.0)),
+                            price: entry.price,
+                            unit_price: entry.unit_price,
                         },
                     );
                 }
