@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: 2023 Outscale SAS
 # SPDX-License-Identifier: BSD-3-Clause
 # syntax=docker/dockerfile:1
-FROM lukemathwalker/cargo-chef:latest-rust-1 AS cargo-chef
+ARG DEBIAN_CODENAME="trixie"
+
+FROM lukemathwalker/cargo-chef:latest-rust-1.89-${DEBIAN_CODENAME} AS cargo-chef
 LABEL maintainer="Outscale SAS"
 WORKDIR /app
 
@@ -21,7 +23,7 @@ COPY Cargo.* /app
 COPY src/ /app/src
 RUN cargo build --release --bin osc-cost
 
-FROM debian:bookworm-slim
+FROM debian:${DEBIAN_CODENAME}-slim
 LABEL maintainer="Outscale SAS"
 ENV USER_ID=65535
 ENV GROUP_ID=65535
@@ -31,8 +33,8 @@ RUN apt-get update && \
    apt-get install -y jq netcat-traditional curl ca-certificates --no-install-recommends && \
    apt-get clean --dry-run && \
    rm -rf /var/lib/apt/lists/*
-RUN addgroup --gid $GROUP_ID $GROUP_NAME && \
-    adduser --shell /sbin/nologin  --gecos "${USER_NAME},0,0,0" --disabled-password --uid $USER_ID --ingroup $GROUP_NAME ${USER_NAME} && \
+RUN groupadd --gid $GROUP_ID $GROUP_NAME && \
+    useradd --shell /sbin/nologin --uid $USER_ID --gid $GROUP_NAME --create-home ${USER_NAME} && \
     mkdir /home/osc-cost/.osc && \
     chown -R osc-cost:osc-cost /home/osc-cost/.osc
 ENV PATH="$PATH:/home/osc-cost/.local/bin"

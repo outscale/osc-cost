@@ -88,12 +88,7 @@ impl Input {
             };
 
             if price_per_hour.is_none() {
-                warn!(
-                    "{}",
-                    format!(
-                        "warning: could not retrieve the catalog for {model_name} in state {state}"
-                    )
-                );
+                warn!("warning: could not retrieve the catalog for {model_name} in state {state}");
                 continue;
             }
 
