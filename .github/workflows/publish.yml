@@ -1,21 +1,22 @@
 name: osc-cost crate.io publishing
+
 on:
   release:
     types: [released]
+
+permissions:
+  contents: read
+  id-token: write  
 
 jobs:
   publish:
     environment: publish
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v2
-    - name: Stable Rust with rustfmt
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        components: rustfmt
+    - uses: actions/checkout@v5
+    - uses: rust-lang/crates-io-auth-action@v1
+      id: auth
     - name: Cargo publish
       run: cargo publish
       env:
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
