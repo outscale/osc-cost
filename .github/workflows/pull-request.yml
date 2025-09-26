@@ -20,11 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Stable Rust with rustfmt
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          components: rustfmt, clippy
+        uses: ./.github/actions/install_toolchain
       - name: Check code format
         run: make format-test
         env:
@@ -35,10 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Stable Rust with rustfmt
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
+        uses: ./.github/actions/install_toolchain
       - name: Run tests
         run: make cargo-test
   integration-test:
@@ -48,11 +41,7 @@ jobs:
       - name: Install musl-tools
         run: sudo apt update -y && sudo apt install musl-tools -y
       - name: Stable Rust with rustfmt
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: x86_64-unknown-linux-musl
+        uses: ./.github/actions/install_toolchain
       - name: Run integration tests
         run: make integration-test
         env:

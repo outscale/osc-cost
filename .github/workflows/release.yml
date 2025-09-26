@@ -35,10 +35,6 @@ jobs:
                 os: ubuntu-latest
                 target: x86_64-unknown-linux-musl
                 suffix: ''
-              - name: macOS x86_64
-                os: macos-latest
-                target: x86_64-apple-darwin
-                suffix: ''
               - name: macOS M1
                 os: macos-latest
                 target: aarch64-apple-darwin
