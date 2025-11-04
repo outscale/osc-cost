@@ -1,9 +1,8 @@
 use std::{error, time::Duration};
 
-use aws_sdk_s3::{model::Object, Client};
+use aws_sdk_s3::{types::Object, Client};
 use log::{info, warn};
 use std::thread;
-use tokio_stream::StreamExt;
 
 use crate::{
     core::{oos::Oos, Resource, Resources},
@@ -32,7 +31,7 @@ impl Input {
             return None;
         };
 
-        let buckets = result.buckets().unwrap_or_default();
+        let buckets = result.buckets();
         let buckets = buckets
             .iter()
             .filter_map(|b| b.name())
@@ -51,8 +50,8 @@ impl Input {
 
         let mut objects = vec![];
         while let Ok(Some(result)) = stream.try_next().await {
-            objects.extend(result.contents().unwrap_or_default().to_vec());
-            if result.is_truncated {
+            objects.extend(result.contents().to_vec());
+            if result.is_truncated? {
                 info!("waiting before request other objects");
                 thread::sleep(Duration::from_secs(FETCH_WAIT));
             }
@@ -99,13 +98,13 @@ impl Input {
             return;
         };
         for (bucket_id, bucket) in &self.buckets {
-            let size = ((bucket
+            let size = bucket
                 .objects
                 .iter()
-                .map(|o| o.size())
+                .map(|o| o.size().unwrap_or(0))
                 .reduce(|o1, o2| o1 + o2)
-                .unwrap_or(0) as f64)
-                / 2_f64.powi(30)) as f32;
+                .unwrap_or_default();
+            let size = (size as f32) / 2_f32.powf(30.0);
 
             let core_resource = Oos {
                 osc_cost_version: Some(String::from(VERSION)),

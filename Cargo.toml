@@ -14,7 +14,7 @@ readme = "README.md"
 chrono = "0.4.22"
 clap = { version = "~4.5", features = ["derive"] }
 env_logger = "0.11.8"
-http = "0.1.21"
+http = "^1.1"
 lazy_static = "1.5.0"
 log = "^0.4"
 outscale_api = { version = "1.16.0", features = ["rustls-tls"], default-features = false }
@@ -23,14 +23,17 @@ regex = "1.6.0"
 secrecy = "0.8.0"
 serde = "^1.0"
 serde_json = "^1.0"
-aws-credential-types = { version = "0.53.0", features = ["hardcoded-credentials"] }
-aws-config = "0.53.0"
-aws-sdk-s3 = "0.23.0"
+aws-credential-types = { version = "1.2.8", features = ["hardcoded-credentials"] }
+aws-config = "1.8.10"
+aws-sdk-s3 = "1.110.0"
 tokio = { version = "1", features = ["full"] }
-icu_locid = "1.0.0"
-spreadsheet-ods = "0.15.0"
+icu_locale_core = "^2.0"
+spreadsheet-ods = "1.0.1"
 comfy-table = "6.1.4"
 prometheus = "0.14.0"
 tokio-stream = "0.1.12"
 strum_macros = "0.24.3"
 strum = "0.24.1"
+
+[patch.crates-io]
+outscale_api = { git = 'https://github.com/outscale/osc-sdk-rust.git', rev = 'd30d1cdd1008df08faa73bdc1a2261c6c0b0254d'}

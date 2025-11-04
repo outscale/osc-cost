@@ -1,8 +1,8 @@
 use crate::core::Resources;
 use crate::VERSION;
-use aws_config::SdkConfig;
+use aws_config::{Region, SdkConfig};
 use aws_credential_types::provider::SharedCredentialsProvider;
-use aws_sdk_s3::{Credentials, Region};
+use aws_credential_types::Credentials;
 use chrono::{DateTime, Utc};
 use http::status::StatusCode;
 use log::debug;
@@ -22,7 +22,6 @@ use outscale_api::models::{
 };
 use rand::rngs::ThreadRng;
 use rand::{thread_rng, Rng};
-use secrecy::SecretString;
 use std::collections::HashMap;
 use std::convert::From;
 use std::env;
@@ -153,7 +152,7 @@ impl Input {
                 config.aws_v4_key = Some(AWSv4Key {
                     region: region.clone(),
                     access_key: access_key.clone(),
-                    secret_key: SecretString::new(secret_key.clone()),
+                    secret_key: secret_key.clone().into(),
                     service: "oapi".to_string(),
                 });
                 config.user_agent = Some(format!("osc-cost/{VERSION}"));
@@ -183,7 +182,7 @@ impl Input {
     }
 
     fn build_aws_config(ak: String, sk: String, region: String) -> SdkConfig {
-        let cred = Credentials::from_keys(ak, sk, None);
+        let cred = Credentials::new(ak, sk, None, None, "oapi");
         // TODO: set Appname
         aws_config::SdkConfig::builder()
             .endpoint_url(format!("https://oos.{region}.outscale.com"))

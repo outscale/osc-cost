@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use icu_locid::locale;
+use icu_locale_core::locale;
+
 use serde::{
     ser::{self, Impossible},
     Serialize,
