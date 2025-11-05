@@ -21,7 +21,7 @@ impl Input {
         if self.skip_fetch(RESOURCE_NAME) {
             return Ok(());
         }
-        let result: ReadVolumesResponse = loop {
+        let result: ReadVolumesResponse = {
             let filter_volumes: FiltersVolume = match &self.filters {
                 Some(filter) => FiltersVolume {
                     tag_keys: Some(filter.tag_keys.clone()),
@@ -35,13 +35,7 @@ impl Input {
                 filters: Some(Box::new(filter_volumes)),
                 ..Default::default()
             };
-            let response = read_volumes(&self.config, Some(request));
-
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
+            read_volumes(&self.config, Some(request))?
         };
         debug!("{:#?}", result);
 
@@ -52,6 +46,7 @@ impl Input {
             }
             Some(volumes) => volumes,
         };
+        self.volumes.clear();
         for volume in volumes {
             let volume_id = volume.volume_id.clone().unwrap_or_else(|| String::from(""));
             self.volumes.insert(volume_id, volume);

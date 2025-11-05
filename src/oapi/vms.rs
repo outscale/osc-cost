@@ -1,4 +1,7 @@
-use std::error;
+use std::{
+    collections::{HashMap, HashSet},
+    error,
+};
 
 use log::{debug, error, info, warn};
 use outscale_api::{
@@ -7,8 +10,8 @@ use outscale_api::{
         vm_api::{read_vm_types, read_vms},
     },
     models::{
-        FiltersImage, FiltersVm, ReadImagesRequest, ReadImagesResponse, ReadVmTypesRequest,
-        ReadVmTypesResponse, ReadVmsRequest, ReadVmsResponse,
+        FiltersImage, FiltersVm, FiltersVmType, ReadImagesRequest, ReadImagesResponse,
+        ReadVmTypesRequest, ReadVmTypesResponse, ReadVmsRequest, ReadVmsResponse,
     },
 };
 
@@ -30,7 +33,7 @@ impl Input {
         if self.skip_fetch(RESOURCE_NAME) {
             return Ok(());
         }
-        let result: ReadVmsResponse = loop {
+        let result: ReadVmsResponse = {
             let filter_vm: FiltersVm = match &self.filters {
                 Some(filter) => FiltersVm {
                     tag_keys: Some(filter.tag_keys.clone()),
@@ -45,12 +48,7 @@ impl Input {
                 filters: Some(Box::new(filter_vm)),
                 ..Default::default()
             };
-            let response = read_vms(&self.config, Some(request));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
+            read_vms(&self.config, Some(request))?
         };
         debug!("{:#?}", result);
 
@@ -61,6 +59,7 @@ impl Input {
             }
             Some(vms) => vms,
         };
+        let mut self_vms = HashMap::new();
         for vm in vms {
             if let Some(state) = &vm.state {
                 match state.as_str() {
@@ -84,31 +83,35 @@ impl Input {
                     self.need_vm_types_fetch = true;
                 }
             }
-            self.vms.insert(vm_id.clone(), vm);
+            self_vms.insert(vm_id.clone(), vm);
         }
-        info!("fetched {} vms", self.vms.len());
+
+        info!("fetched {} vms", self_vms.len());
+        self.vms = self_vms;
         Ok(())
     }
 
     pub fn fetch_vms_images(&mut self) -> Result<(), Box<dyn error::Error>> {
         // Collect all unique images
-        let mut images = Vec::<ImageId>::new();
+        let mut images = HashSet::<ImageId>::new();
         for vm_id in self.vms.keys() {
-            images.push(vm_id.clone());
+            images.insert(vm_id.clone());
         }
-        images.dedup();
+        for img_id in self.vms_images.keys() {
+            images.remove(img_id);
+        }
+        if images.is_empty() {
+            //if we have no images to list, we dont need to make a call
+            return Ok(());
+        }
+
         let mut filters_image = FiltersImage::new();
-        filters_image.image_ids = Some(images);
+        filters_image.image_ids = Some(images.into_iter().collect::<Vec<_>>());
+
         let mut request = ReadImagesRequest::new();
         request.filters = Some(Box::new(filters_image));
-        let result: ReadImagesResponse = loop {
-            let response = read_images(&self.config, Some(request.clone()));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
-        };
+
+        let result: ReadImagesResponse = read_images(&self.config, Some(request.clone()))?;
         debug!("{:#?}", result);
 
         let images = match result.images {
@@ -127,15 +130,28 @@ impl Input {
     }
 
     pub fn fetch_vm_types(&mut self) -> Result<(), Box<dyn error::Error>> {
-        let request = ReadVmTypesRequest::new();
-        let result: ReadVmTypesResponse = loop {
-            let response = read_vm_types(&self.config, Some(request.clone()));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
+        // Collect all unique vm_type
+        let mut vm_types = HashSet::<String>::new();
+        for vm in self.vms.values() {
+            if let Some(vmt) = vm.vm_type.as_ref() {
+                vm_types.insert(vmt.clone());
             }
-            break response?;
-        };
+        }
+        for t_id in self.vm_types.keys() {
+            vm_types.remove(t_id);
+        }
+        if vm_types.is_empty() {
+            //if we have no type to list, we dont need to make a call
+            return Ok(());
+        }
+
+        let mut filter_type = FiltersVmType::new();
+        filter_type.vm_type_names = Some(vm_types.into_iter().collect::<Vec<_>>());
+
+        let mut request = ReadVmTypesRequest::new();
+        request.filters = Some(Box::new(filter_type));
+
+        let result: ReadVmTypesResponse = read_vm_types(&self.config, Some(request.clone()))?;
         debug!("{:#?}", result);
 
         let vm_types = match result.vm_types {

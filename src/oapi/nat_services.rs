@@ -21,7 +21,7 @@ impl Input {
         if self.skip_fetch(RESOURCE_NAME) {
             return Ok(());
         }
-        let result: ReadNatServicesResponse = loop {
+        let result: ReadNatServicesResponse = {
             let filters: FiltersNatService = match &self.filters {
                 Some(filter) => FiltersNatService {
                     tag_keys: Some(filter.tag_keys.clone()),
@@ -35,12 +35,7 @@ impl Input {
                 filters: Some(Box::new(filters)),
                 ..Default::default()
             };
-            let response = read_nat_services(&self.config, Some(request));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
+            read_nat_services(&self.config, Some(request))?
         };
         debug!("{:#?}", result);
 
@@ -52,6 +47,7 @@ impl Input {
             Some(nat_services) => nat_services,
         };
 
+        self.nat_services.clear();
         for nat_service in nat_services {
             let nat_service_id = nat_service
                 .nat_service_id

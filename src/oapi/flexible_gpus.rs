@@ -25,14 +25,8 @@ impl Input {
         let request = ReadFlexibleGpusRequest {
             ..Default::default()
         };
-        let result: ReadFlexibleGpusResponse = loop {
-            let response = read_flexible_gpus(&self.config, Some(request.clone()));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
-        };
+        let result: ReadFlexibleGpusResponse =
+            read_flexible_gpus(&self.config, Some(request.clone()))?;
         debug!("{:#?}", result);
         let flexible_gpus = match result.flexible_gpus {
             None => {
@@ -41,6 +35,7 @@ impl Input {
             }
             Some(flexible_gpus) => flexible_gpus,
         };
+        self.flexible_gpus.clear();
         for flexible_gpu in flexible_gpus {
             let flexible_gpu_id = flexible_gpu
                 .flexible_gpu_id

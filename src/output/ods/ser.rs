@@ -30,7 +30,7 @@ pub fn to_bytes<T>(value: &T) -> Result<Vec<u8>>
 where
     T: Serialize,
 {
-    let mut wb = WorkBook::new(locale!("en_US"));
+    let mut wb = WorkBook::new(locale!("en-US"));
 
     let mut st_header = CellStyle::new("header", &DefaultFormat::default());
     st_header.set_font_bold();
