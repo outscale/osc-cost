@@ -69,6 +69,7 @@ impl Input {
             return Ok(());
         };
 
+        self.buckets.clear();
         for bucket in &buckets {
             let Some(objects) = self.list_objects(bucket).await else {
                 continue;

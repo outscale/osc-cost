@@ -45,14 +45,7 @@ impl Input {
             filters: Some(Box::new(filters)),
             ..Default::default()
         };
-        let result: ReadSnapshotsResponse = loop {
-            let response = read_snapshots(&self.config, Some(request.clone()));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
-        };
+        let result: ReadSnapshotsResponse = read_snapshots(&self.config, Some(request.clone()))?;
         debug!("{:#?}", result);
 
         let snapshots = match result.snapshots {
@@ -62,6 +55,7 @@ impl Input {
             }
             Some(snapshots) => snapshots,
         };
+        self.snapshots.clear();
         for snapshot in snapshots {
             let snapshot_id = snapshot
                 .snapshot_id

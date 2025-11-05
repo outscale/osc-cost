@@ -34,14 +34,7 @@ impl Input {
             filters: Some(Box::new(filters)),
             ..Default::default()
         };
-        let result: ReadPublicIpsResponse = loop {
-            let response = read_public_ips(&self.config, Some(request.clone()));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
-        };
+        let result: ReadPublicIpsResponse = read_public_ips(&self.config, Some(request.clone()))?;
         debug!("{:#?}", result);
 
         let public_ips = match result.public_ips {
@@ -51,6 +44,7 @@ impl Input {
             }
             Some(ips) => ips,
         };
+        self.public_ips.clear();
         for public_ip in public_ips {
             let public_ip_id = match &public_ip.public_ip_id {
                 Some(id) => id.clone(),

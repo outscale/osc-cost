@@ -1,10 +1,9 @@
 use crate::core::Resources;
 use crate::VERSION;
-use aws_config::{Region, SdkConfig};
+use aws_config::{BehaviorVersion, Region, SdkConfig};
 use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_credential_types::Credentials;
 use chrono::{DateTime, Utc};
-use http::status::StatusCode;
 use log::debug;
 use log::{info, trace, warn};
 use outscale_api::apis::account_api::read_accounts;
@@ -13,22 +12,17 @@ use outscale_api::apis::configuration::AWSv4Key;
 use outscale_api::apis::configuration::Configuration;
 use outscale_api::apis::configuration_file::{ConfigurationFile, ConfigurationFileError};
 use outscale_api::apis::subregion_api::read_subregions;
-use outscale_api::apis::Error::ResponseError;
 use outscale_api::models::ConsumptionEntry;
 use outscale_api::models::{
     Account, CatalogEntry, FlexibleGpu, Image, NatService, PublicIp, ReadAccountsRequest,
     ReadAccountsResponse, ReadCatalogRequest, ReadCatalogResponse, ReadSubregionsRequest,
     ReadSubregionsResponse, Snapshot, Vm, VmType, Volume,
 };
-use rand::rngs::ThreadRng;
-use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::convert::From;
 use std::env;
 use std::error;
 use std::error::Error;
-use std::thread::sleep;
-use std::time::Duration;
 
 use self::flexible_gpus::FlexibleGpuId;
 use self::load_balancers::LoadbalancerId;
@@ -39,9 +33,6 @@ use self::snapshots::SnapshotId;
 use self::vms::VmId;
 use self::volumes::VolumeId;
 use self::vpn::VpnId;
-
-static THROTTLING_MIN_WAIT_MS: u64 = 1000;
-static THROTTLING_MAX_WAIT_MS: u64 = 10000;
 
 type ImageId = String;
 
@@ -73,7 +64,6 @@ pub struct Filter {
 pub struct Input {
     config: Configuration,
     aws_config: SdkConfig,
-    rng: ThreadRng,
     pub vms: HashMap<VmId, Vm>,
     pub vms_images: HashMap<ImageId, Image>,
     pub catalog: HashMap<CatalogId, CatalogEntry>,
@@ -102,7 +92,6 @@ impl Input {
         Ok(Input {
             config,
             aws_config,
-            rng: thread_rng(),
             vms: HashMap::new(),
             vms_images: HashMap::new(),
             catalog: HashMap::new(),
@@ -186,6 +175,7 @@ impl Input {
         // TODO: set Appname
         aws_config::SdkConfig::builder()
             .endpoint_url(format!("https://oos.{region}.outscale.com"))
+            .behavior_version(BehaviorVersion::v2025_08_07())
             .region(Region::new(region))
             .credentials_provider(SharedCredentialsProvider::new(cred))
             .build()
@@ -231,14 +221,9 @@ impl Input {
     }
 
     pub fn fetch_catalog(&mut self) -> Result<(), Box<dyn error::Error>> {
-        let result: ReadCatalogResponse = loop {
+        let result: ReadCatalogResponse = {
             let request = ReadCatalogRequest::new();
-            let response = read_catalog(&self.config, Some(request));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
+            read_catalog(&self.config, Some(request))?
         };
         debug!("{:#?}", result);
 
@@ -288,14 +273,9 @@ impl Input {
     }
 
     fn fetch_account(&mut self) -> Result<(), Box<dyn error::Error>> {
-        let result: ReadAccountsResponse = loop {
+        let result: ReadAccountsResponse = {
             let request = ReadAccountsRequest::new();
-            let response = read_accounts(&self.config, Some(request));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
+            read_accounts(&self.config, Some(request))?
         };
         debug!("{:#?}", result);
 
@@ -318,14 +298,9 @@ impl Input {
     }
 
     fn fetch_region(&mut self) -> Result<(), Box<dyn error::Error>> {
-        let result: ReadSubregionsResponse = loop {
+        let result: ReadSubregionsResponse = {
             let request = ReadSubregionsRequest::new();
-            let response = read_subregions(&self.config, Some(request));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
+            read_subregions(&self.config, Some(request))?
         };
         debug!("{:#?}", result);
 
@@ -345,27 +320,6 @@ impl Input {
         };
         info!("fetched region details");
         Ok(())
-    }
-
-    fn random_wait(&mut self) {
-        let wait_time_ms = self
-            .rng
-            .gen_range(THROTTLING_MIN_WAIT_MS..THROTTLING_MAX_WAIT_MS);
-        info!("call throttled, waiting for {}ms", wait_time_ms);
-        sleep(Duration::from_millis(wait_time_ms));
-    }
-
-    fn is_throttled<S, T>(result: &Result<S, outscale_api::apis::Error<T>>) -> bool {
-        match result {
-            Ok(_) => false,
-            Err(error) => match error {
-                ResponseError(resp) => matches!(
-                    resp.status,
-                    StatusCode::SERVICE_UNAVAILABLE | StatusCode::TOO_MANY_REQUESTS
-                ),
-                _ => false,
-            },
-        }
     }
 
     fn account_id(&self) -> Option<String> {

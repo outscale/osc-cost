@@ -20,15 +20,10 @@ impl Input {
         from_date: &str,
         to_date: &str,
     ) -> Result<(), Box<dyn error::Error>> {
-        let result: ReadConsumptionAccountResponse = loop {
+        let result: ReadConsumptionAccountResponse = {
             let request =
                 ReadConsumptionAccountRequest::new(from_date.to_owned(), to_date.to_owned());
-            let response = read_consumption_account(&self.config, Some(request));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
+            read_consumption_account(&self.config, Some(request))?
         };
 
         let entries = match result.consumption_entries {
@@ -39,6 +34,7 @@ impl Input {
             }
         };
 
+        self.consumption.clear();
         for entry in entries {
             let service = match &entry.service {
                 Some(t) => t.clone(),

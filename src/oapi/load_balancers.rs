@@ -24,14 +24,8 @@ impl Input {
         let request = ReadLoadBalancersRequest {
             ..Default::default()
         };
-        let result: ReadLoadBalancersResponse = loop {
-            let response = read_load_balancers(&self.config, Some(request.clone()));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
-        };
+        let result: ReadLoadBalancersResponse =
+            read_load_balancers(&self.config, Some(request.clone()))?;
         debug!("{:#?}", result);
 
         let resources = match result.load_balancers {
@@ -41,6 +35,7 @@ impl Input {
             }
             Some(lbu) => lbu,
         };
+        self.load_balancers.clear();
         for lbu in resources {
             let lbu_id = lbu
                 .load_balancer_name

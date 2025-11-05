@@ -34,14 +34,8 @@ impl Input {
             filters: Some(Box::new(filters)),
             ..Default::default()
         };
-        let result: ReadVpnConnectionsResponse = loop {
-            let response = read_vpn_connections(&self.config, Some(request.clone()));
-            if Input::is_throttled(&response) {
-                self.random_wait();
-                continue;
-            }
-            break response?;
-        };
+        let result: ReadVpnConnectionsResponse =
+            read_vpn_connections(&self.config, Some(request.clone()))?;
         debug!("{:#?}", result);
 
         let resources = match result.vpn_connections {
@@ -51,6 +45,7 @@ impl Input {
             }
             Some(vpn) => vpn,
         };
+        self.vpns.clear();
         for vpn in resources {
             let vpn_id = vpn
                 .vpn_connection_id
