@@ -1,6 +1,6 @@
 [package]
 name = "osc-cost"
-version = "0.5.4"
+version = "0.6.0"
 edition = "2021"
 authors = ["Tooling Team <opensource@outscale.com>"]
 license = "BSD-3-Clause"
@@ -17,7 +17,7 @@ env_logger = "0.11.8"
 http = "^1.1"
 lazy_static = "1.5.0"
 log = "^0.4"
-outscale_api = { version = "1.16.0", features = ["rustls-tls"], default-features = false }
+outscale_api = { version = "1.17.0", features = ["rustls-tls"], default-features = false }
 rand = "0.8.5"
 regex = "1.6.0"
 secrecy = "^0.10"
@@ -34,6 +34,3 @@ prometheus = "0.14.0"
 tokio-stream = "0.1.12"
 strum_macros = "0.24.3"
 strum = "0.24.1"
-
-[patch.crates-io]
-outscale_api = { git = 'https://github.com/outscale/osc-sdk-rust.git', rev = 'd30d1cdd1008df08faa73bdc1a2261c6c0b0254d'}
