@@ -3,7 +3,7 @@
 # syntax=docker/dockerfile:1
 ARG DEBIAN_CODENAME="trixie"
 
-FROM lukemathwalker/cargo-chef:latest-rust-1.89-${DEBIAN_CODENAME} AS cargo-chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.91-${DEBIAN_CODENAME} AS cargo-chef
 LABEL maintainer="Outscale SAS"
 WORKDIR /app
 
