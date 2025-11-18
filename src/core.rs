@@ -46,6 +46,7 @@ pub enum Resource {
     DedicatedInstance(DedicatedInstance),
 }
 
+#[derive(Debug, Serialize)]
 pub struct Resources {
     pub resources: Vec<Resource>,
 }

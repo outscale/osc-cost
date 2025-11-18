@@ -30,6 +30,14 @@ spec:
         - name: osc-cost
           image: "{{ .containers.image }}:{{ .containers.imageTag }}"
           imagePullPolicy: {{ .containers.pullPolicy }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
           env:
             - name: OSC_ACCESS_KEY
               valueFrom:
@@ -75,7 +83,7 @@ spec:
             - name: osc-cost-home
               mountPath: /home/osc-cost/.osc
         {{- end }}
-      {{- with .Values.imagePullSecrets }}
+      {{- with .imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}

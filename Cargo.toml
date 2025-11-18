@@ -9,7 +9,6 @@ repository = "https://github.com/outscale/osc-cost"
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 chrono = "0.4.22"
 clap = { version = "~4.5", features = ["derive"] }
@@ -34,3 +33,12 @@ prometheus = "0.14.0"
 tokio-stream = "0.1.12"
 strum_macros = "0.24.3"
 strum = "0.24.1"
+axum = { version = "0.8.7", features = ["json"] }
+
+[[bin]]
+name = "osc-cost"
+path = "src/cli.rs"
+
+[[bin]]
+name = "osc-cost-exporter"
+path = "src/server.rs"

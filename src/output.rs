@@ -1,6 +1,6 @@
 pub mod human;
-pub mod markdown;
 pub mod json;
+pub mod markdown;
 pub mod ods;
 pub mod prometheus;
 

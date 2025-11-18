@@ -1,6 +1,4 @@
-use comfy_table::{
-    presets::ASCII_MARKDOWN, Cell, ContentArrangement, Table,
-};
+use comfy_table::{presets::ASCII_MARKDOWN, Cell, ContentArrangement, Table};
 use log::warn;
 use osc_cost::core::{digest::Drifts, Resource, Resources};
 use std::error::Error;
