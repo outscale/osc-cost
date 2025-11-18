@@ -352,23 +352,27 @@ impl Input {
         }
         false
     }
+
+    pub fn build_resources(&mut self) -> Resources {
+        let mut resources = Resources {
+            resources: Vec::new(),
+        };
+        self.fill_resource_vm(&mut resources);
+        self.fill_resource_volume(&mut resources);
+        self.fill_resource_public_ip(&mut resources);
+        self.fill_resource_snapshot(&mut resources);
+        self.fill_resource_nat_service(&mut resources);
+        self.fill_resource_flexible_gpus(&mut resources);
+        self.fill_resource_load_balancers(&mut resources);
+        self.fill_resource_vpns(&mut resources);
+        self.fill_resource_oos(&mut resources);
+        self.fill_resource_dedicated_instances(&mut resources);
+        resources
+    }
 }
 
 impl From<Input> for Resources {
     fn from(mut input: Input) -> Self {
-        let mut resources = Resources {
-            resources: Vec::new(),
-        };
-        input.fill_resource_vm(&mut resources);
-        input.fill_resource_volume(&mut resources);
-        input.fill_resource_public_ip(&mut resources);
-        input.fill_resource_snapshot(&mut resources);
-        input.fill_resource_nat_service(&mut resources);
-        input.fill_resource_flexible_gpus(&mut resources);
-        input.fill_resource_load_balancers(&mut resources);
-        input.fill_resource_vpns(&mut resources);
-        input.fill_resource_oos(&mut resources);
-        input.fill_resource_dedicated_instances(&mut resources);
-        resources
+        input.build_resources()
     }
 }

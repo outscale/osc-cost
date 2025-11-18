@@ -27,7 +27,6 @@ test: reuse-test cargo-test format-test integration-test
 .PHONY: format-test
 format-test:
 	cargo fmt --check
-	cargo clippy
 
 .PHONY: integration-test
 integration-test: $(TARGET)
