@@ -70,6 +70,7 @@ pub enum OutputFormat {
     Json,
     Ods,
     Human,
+    Markdown,
     Prometheus,
 }
 
@@ -93,6 +94,7 @@ impl Args {
             (false, _) => 0,
             (true, OutputFormat::Json) => 0,
             (true, OutputFormat::Human) => 0,
+            (true, OutputFormat::Markdown) => 0,
             (true, OutputFormat::Ods) => 0,
             (true, OutputFormat::Prometheus) => 0,
             (true, OutputFormat::Hour) => {
@@ -131,6 +133,7 @@ impl Args {
             (false, _) => 0,
             (true, OutputFormat::Json) => 0,
             (true, OutputFormat::Human) => 0,
+            (true, OutputFormat::Markdown) => 0,
             (true, _) => {
                 error!("cannot use drift with the specified output");
                 1

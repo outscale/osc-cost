@@ -107,6 +107,7 @@ osc-cost
 
 ```bash
 osc-cost --format=human        # human-friendly output
+osc-cost --format=markdown     # markdown output
 osc-cost --format=json         # detailed structured output
 osc-cost --format=ods          # ODS spreadsheet
 osc-cost --format=prometheus   # Prometheus format
