@@ -4,6 +4,7 @@ use osc_cost::core::digest::{compute_drift, Digest};
 use osc_cost::core::{Resource, Resources};
 use osc_cost::oapi::{Filter, Input};
 use output::human::Human;
+use output::markdown::Markdown;
 use output::json::Json;
 use output::ods::ods;
 use output::prometheus::prometheus;
@@ -89,6 +90,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             output = match args.format {
                 OutputFormat::Json => drifts.json()?.into_bytes(),
                 OutputFormat::Human => drifts.human()?.into_bytes(),
+                OutputFormat::Markdown => drifts.markdown()?.into_bytes(),
                 _ => {
                     warn!("unimplemented output for drift computation");
                     exit(1);
@@ -103,6 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 OutputFormat::Prometheus => (prometheus(&resources)?).into_bytes(),
                 OutputFormat::Ods => ods(&resources)?,
                 OutputFormat::Human => resources.aggregate().human()?.into_bytes(),
+                OutputFormat::Markdown => resources.aggregate().markdown()?.into_bytes(),
             };
         }
 

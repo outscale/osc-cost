@@ -1,4 +1,5 @@
 pub mod human;
+pub mod markdown;
 pub mod json;
 pub mod ods;
 pub mod prometheus;
