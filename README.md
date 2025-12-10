@@ -162,10 +162,9 @@ osc-cost --compute-drift \
 Export estimated prices in Prometheus format:
 
 ```bash
-osc-cost --format=prometheus -n
+osc-cost-exporter --bind 127.0.0.1:8080 &
+curl http://127.0.0.1:8080
 ```
-
-A serde formatter is used to expose metrics in a simple text format.
 
 ---
 
