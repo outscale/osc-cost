@@ -1,0 +1,16 @@
+version = 1
+SPDX-PackageName = "osc-cost"
+SPDX-PackageSupplier = "Outscale support <support@outscale.com>"
+SPDX-PackageDownloadLocation = "https://gitlab.com/outscale/osc-cost/"
+
+[[annotations]]
+path = "**.md"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2022 Outscale SAS <support@outscale.com>"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["version", "Makefile", "sdk_version", "api_version", "**.rs", ".git**", "src/**", "**.yml", "**.yaml", ".patch/**.patch", "**.patch", "Cargo.toml", "Cargo.lock", "examples/config_example.json", "int-tests/**", ".cargo/config.toml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2022 Outscale SAS <support@outscale.com>"
+SPDX-License-Identifier = "BSD-3-Clause"
