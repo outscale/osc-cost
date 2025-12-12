@@ -34,7 +34,7 @@ integration-test: $(TARGET)
 
 .PHONY: reuse-test
 reuse-test:
-	docker run --rm --volume $(PWD):/data fsfe/reuse:0.11.1 lint
+	docker run --rm --volume $(PWD):/data fsfe/reuse:5.1 lint
 
 .PHONY: docker-build
 docker-build: # Build docker image with the manager 
