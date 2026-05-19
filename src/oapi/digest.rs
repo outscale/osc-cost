@@ -71,6 +71,7 @@ impl Input {
                             from_date: entry.from_date,
                             operation: entry.operation,
                             paying_account_id: entry.paying_account_id,
+                            resource_id: entry.resource_id,
                             service: entry.service,
                             subregion_name: None,
                             title: entry.title,
