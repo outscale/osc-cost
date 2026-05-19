@@ -21,12 +21,15 @@ struct Args {
     pub profile: Option<String>,
     #[arg(long, short = 'a', default_value_t = false)]
     pub aggregate: bool,
+    #[arg(long, short = 'n', default_value_t = false)]
+    pub need_default_resource: bool,
 }
 
 #[derive(Clone)]
 struct AppState {
     input: Arc<Mutex<Input>>,
     aggregate: bool,
+    need_default_resource: bool,
 }
 
 #[tokio::main]
@@ -42,6 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = AppState {
         input: Arc::new(Mutex::new(input)),
         aggregate: args.aggregate,
+        need_default_resource: args.need_default_resource,
     };
 
     let app = Router::new()
@@ -61,10 +65,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn root(State(state): State<AppState>) -> Result<Response, String> {
     let local_lock = state.input.clone();
+    let need_default_resource = state.need_default_resource;
     let mut resources = match tokio::task::spawn_blocking(move || {
         let mut inputs = local_lock
             .lock()
             .map_err(|e| format!("Could not lock mutex: {e}"))?;
+        inputs.need_default_resource = need_default_resource;
         inputs
             .fetch()
             .map_err(|e| format!("Could not fetch inputs: {e}"))?;
