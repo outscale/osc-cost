@@ -10,7 +10,7 @@ use outscale_api::apis::account_api::read_accounts;
 use outscale_api::apis::catalog_api::read_catalog;
 use outscale_api::apis::configuration::AWSv4Key;
 use outscale_api::apis::configuration::Configuration;
-use outscale_api::apis::configuration_file::{ConfigurationFile, ConfigurationFileError};
+use outscale_api::apis::profile::{Profile, ProfileBuilder};
 use outscale_api::apis::subregion_api::read_subregions;
 use outscale_api::models::ConsumptionEntry;
 use outscale_api::models::{
@@ -119,14 +119,12 @@ impl Input {
         // Test if the 'profile' parameter is set
         trace!("try to load api config parameter");
         if let Some(profile_name) = profile {
-            let config_file = ConfigurationFile::load_default()?;
-            let mut config = config_file.configuration(&profile_name)?;
+            let profile = ProfileBuilder::from_standard_configuration(None, Some(profile_name))?.build();
+            let aws_config = Input::build_aws_config_from_profile(&profile)?;
+            let mut config = Configuration::try_from(profile)?;
             config.user_agent = Some(format!("osc-cost/{VERSION}"));
 
-            return Ok((
-                config,
-                Input::build_aws_config_from_file(&config_file, profile_name)?,
-            ));
+            return Ok((config, aws_config));
         }
 
         // If not, check for environment variables
@@ -158,16 +156,13 @@ impl Input {
 
         // If not, check 'default' profile
         trace!("try to load default config from configuration file");
-        let profile_name = "default";
         trace!("try to load api config from configuration file");
-        let config_file = ConfigurationFile::load_default()?;
-        let mut config = config_file.configuration(profile_name)?;
+        let profile = ProfileBuilder::from_standard_configuration(None, Some("default".to_string()))?.build();
+        let aws_config = Input::build_aws_config_from_profile(&profile)?;
+        let mut config = Configuration::try_from(profile)?;
         config.user_agent = Some(format!("osc-cost/{VERSION}"));
 
-        Ok((
-            config,
-            Input::build_aws_config_from_file(&config_file, profile_name)?,
-        ))
+        Ok((config, aws_config))
     }
 
     fn build_aws_config(ak: String, sk: String, region: String) -> SdkConfig {
@@ -181,19 +176,12 @@ impl Input {
             .build()
     }
 
-    fn build_aws_config_from_file<S: Into<String>>(
-        config_file: &ConfigurationFile,
-        profile_name: S,
+    fn build_aws_config_from_profile(
+        profile: &Profile,
     ) -> Result<SdkConfig, Box<dyn Error>> {
-        let profile_name = profile_name.into();
-        let profile = match config_file.0.get(&profile_name) {
-            Some(profile) => profile.clone(),
-            None => return Err(Box::new(ConfigurationFileError::ProfileNotFound)),
-        };
-
-        let region = profile.region.ok_or("No region for the profile")?;
-        let access_key = profile.access_key.ok_or("No AK for the profile")?;
-        let secret_key = profile.secret_key.ok_or("No SK for the profile")?;
+        let region = profile.region.clone();
+        let access_key = profile.access_key.clone().ok_or("No AK for the profile")?;
+        let secret_key = profile.secret_key.clone().ok_or("No SK for the profile")?;
 
         Ok(Input::build_aws_config(access_key, secret_key, region))
     }
