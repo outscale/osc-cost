@@ -30,6 +30,10 @@ spec:
         - name: osc-cost
           image: "{{ .containers.image }}:{{ .containers.imageTag }}"
           imagePullPolicy: {{ .containers.pullPolicy }}
+          {{- if .containers.osccostExtraParams }}
+          args:
+            {{- toYaml .containers.osccostExtraParams | nindent 12 }}
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /health
@@ -54,10 +58,6 @@ spec:
                 secretKeyRef:
                   name: {{ template "osccost.secret" $root }}
                   key: OSC_REGION
-            {{- if .containers.osccostExtraParams }}
-            - name: OSCCOST_EXTRA_PARAMS
-              value: "{{ .containers.osccostExtraParams }}"
-            {{- end }}
           ports:
             - name: http-metrics
               containerPort: 8080
