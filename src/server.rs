@@ -46,6 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = Router::new()
         .route("/", get(root))
+        .route("/metrics", get(root))
         .route("/health", get(healhcheck))
         .with_state(state);
 
