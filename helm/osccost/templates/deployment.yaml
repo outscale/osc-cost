@@ -26,6 +26,10 @@ spec:
     spec:
       serviceAccountName: {{ template "osccost.serviceAccount" $root }}
       automountServiceAccountToken: false
+      {{- if .podSecurityContext }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
         - name: osc-cost
           image: "{{ .containers.image }}:{{ .containers.imageTag }}"
@@ -76,13 +80,11 @@ spec:
         {{- end }}
         {{- if .containers.securityContext }}
           securityContext:
-          {{- range $key, $val := .containers.securityContext }}
-            {{ $key }}: {{ $val }}
-          {{- end }}
+            {{- toYaml .containers.securityContext | nindent 12 }}
+        {{- end }}
           volumeMounts:
             - name: osc-cost-home
               mountPath: /home/osc-cost/.osc
-        {{- end }}
       {{- with .imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
