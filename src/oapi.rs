@@ -119,7 +119,8 @@ impl Input {
         // Test if the 'profile' parameter is set
         trace!("try to load api config parameter");
         if let Some(profile_name) = profile {
-            let profile = ProfileBuilder::from_standard_configuration(None, Some(profile_name))?.build();
+            let profile =
+                ProfileBuilder::from_standard_configuration(None, Some(profile_name))?.build();
             let aws_config = Input::build_aws_config_from_profile(&profile)?;
             let mut config = Configuration::try_from(profile)?;
             config.user_agent = Some(format!("osc-cost/{VERSION}"));
@@ -157,7 +158,8 @@ impl Input {
         // If not, check 'default' profile
         trace!("try to load default config from configuration file");
         trace!("try to load api config from configuration file");
-        let profile = ProfileBuilder::from_standard_configuration(None, Some("default".to_string()))?.build();
+        let profile =
+            ProfileBuilder::from_standard_configuration(None, Some("default".to_string()))?.build();
         let aws_config = Input::build_aws_config_from_profile(&profile)?;
         let mut config = Configuration::try_from(profile)?;
         config.user_agent = Some(format!("osc-cost/{VERSION}"));
@@ -170,15 +172,13 @@ impl Input {
         // TODO: set Appname
         aws_config::SdkConfig::builder()
             .endpoint_url(format!("https://oos.{region}.outscale.com"))
-            .behavior_version(BehaviorVersion::v2025_08_07())
+            .behavior_version(BehaviorVersion::v2026_01_12())
             .region(Region::new(region))
             .credentials_provider(SharedCredentialsProvider::new(cred))
             .build()
     }
 
-    fn build_aws_config_from_profile(
-        profile: &Profile,
-    ) -> Result<SdkConfig, Box<dyn Error>> {
+    fn build_aws_config_from_profile(profile: &Profile) -> Result<SdkConfig, Box<dyn Error>> {
         let region = profile.region.clone();
         let access_key = profile.access_key.clone().ok_or("No AK for the profile")?;
         let secret_key = profile.secret_key.clone().ok_or("No SK for the profile")?;
