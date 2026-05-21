@@ -52,40 +52,57 @@ osccost:
     enable: True
     # -- specify pull secrets
     imagePullSecrets: []
+    # -- Pod securityContext
+    podSecurityContext:
+      # -- Run as user
+      runAsUser: 65535
+      # -- Run as group
+      runAsGroup: 65535
+      # -- Require non-root
+      runAsNonRoot: true
+      # -- Set secure computing mode
+      seccompProfile:
+        type: RuntimeDefault
     containers:
-    # -- Outscale provider image
+      # -- Outscale provider image
       image: outscale/osc-cost
-    # -- Outscale provider image tag
+      # -- Outscale provider image tag
       imageTag: "v0.7.0"
-    # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
+      # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
       pullPolicy: Always
-    # -- Additional securityContext to add
+      # -- Additional securityContext to add
       securityContext:
-    # -- Allow or denied Privilege escalation
+        # -- Allow or denied Privilege escalation
         allowPrivilegeEscalation: false
-    # -- Run as user
-        runAsUser: 65535
-    # -- Run as group
-        runAsGroup: 65535
-    # -- Set read only rootfs
+        # -- Drop all capabilities and add specific capabilities
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        # -- Require non-root
+        runAsNonRoot: true
+        # -- Set read only rootfs
         readOnlyRootFilesystem: true
-    # -- Manage resource
+        # -- Set secure computing mode
+        seccompProfile:
+          type: RuntimeDefault
+      # -- Manage resource
       resources:
         memory:
-    # -- Container memory requests
+          # -- Container memory requests
           requests: 600Mi
-    # -- Container memory limits
+          # -- Container memory limits
           limits: 900Mi
-    # -- Container memory limits
+        # -- Container memory limits
         cpu:
-    # -- Container cpu requests
+          # -- Container cpu requests
           requests: 300m
-    # -- Container cpu limts
+          # -- Container cpu limts
           limits: 600m
         ephemeralstorage:
-    # -- Container ephemeralstorage requests
+          # -- Container ephemeralstorage requests
           requests: 100Mi
-    # -- Container ephemeralstorage limits
+          # -- Container ephemeralstorage limits
           limits: 200Mi
-    # -- Allow to pass extra parameters to osc-cost command (for example "--need-default-resource")
+      # -- Allow to pass extra parameters to osc-cost command (for example "--need-default-resource")
       osccostExtraParams: []
