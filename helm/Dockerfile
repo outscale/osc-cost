@@ -4,7 +4,7 @@
 FROM rust:1.92-trixie AS build-env
 WORKDIR /app
 COPY . /app
-RUN cargo build --release
+RUN cargo build --release --locked
 
 FROM gcr.io/distroless/cc-debian13
 COPY --from=build-env /app/target/release/osc-cost-exporter /

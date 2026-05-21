@@ -34,6 +34,15 @@ jobs:
         uses: ./.github/actions/install_toolchain
       - name: Run tests
         run: make cargo-test
+  cargo-clippy:
+    environment: eu-west-2
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Stable Rust with rustfmt
+        uses: ./.github/actions/install_toolchain
+      - name: Run tests
+        run: make cargo-clippy
   integration-test:
     runs-on: ubuntu-24.04
     steps:
@@ -48,18 +57,3 @@ jobs:
           OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY }}
           OSC_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY }}
           OSC_REGION: ${{ secrets.OSC_REGION }}
-  dependabot-auto-merge:
-    needs: [reuse-test, cargo-test, integration-test]
-    runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
-    steps:
-      - name: Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@v1.1.1
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Auto-merge
-        run: gh pr merge --auto --rebase "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

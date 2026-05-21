@@ -15,14 +15,19 @@ help:
 build: $(TARGET)
 
 target/x86_64-unknown-linux-musl/release/osc-cost: src/*.rs
-	cargo build --target x86_64-unknown-linux-musl --release
+	cargo build --target x86_64-unknown-linux-musl --release --locked
 
 .PHONY: test
-test: reuse-test cargo-test format-test integration-test
+test: reuse-test cargo-test format-test cargo-clippy integration-test
 	@echo all tests OK
 
 .PHONY: cargo-test
+cargo-test:
 	cargo test
+
+.PHONY: cargo-clippy
+cargo-clippy:
+	cargo clippy --all-targets --all-features --locked
 
 .PHONY: format-test
 format-test:

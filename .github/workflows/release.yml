@@ -58,7 +58,7 @@ jobs:
         run: sudo apt update -y && sudo apt install musl-tools -y
         if: matrix.os == 'ubuntu-latest'
       - name: Build
-        run: cargo build --target ${{ matrix.target }} --release
+        run: cargo build --target ${{ matrix.target }} --release --locked
       - name: Move binary
         run: mv target/${{ matrix.target }}/release/osc-cost${{ matrix.suffix }} osc-cost-${{ github.ref_name }}-${{ matrix.target }}${{ matrix.suffix }}
       - name: Upload Artefact to release

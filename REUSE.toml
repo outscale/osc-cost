@@ -10,7 +10,7 @@ SPDX-FileCopyrightText = "2022 Outscale SAS <support@outscale.com>"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
-path = ["version", "Makefile", "sdk_version", "api_version", "**.rs", ".git**", "src/**", "**.yml", "**.yaml", ".patch/**.patch", "**.patch", "Cargo.toml", "Cargo.lock", "examples/config_example.json", "int-tests/**", ".cargo/config.toml"]
+path = ["version", "Makefile", "sdk_version", "api_version", "**.rs", ".git**", "src/**", "**.yml", "**.yaml", ".patch/**.patch", "**.patch", "Cargo.toml", "Cargo.lock", "clippy.toml", "examples/config_example.json", "int-tests/**", ".cargo/config.toml"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2022 Outscale SAS <support@outscale.com>"
 SPDX-License-Identifier = "BSD-3-Clause"
