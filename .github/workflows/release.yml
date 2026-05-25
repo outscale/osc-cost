@@ -19,7 +19,7 @@ jobs:
             fetch-depth: 0
 
         - name: Create Release
-          uses: softprops/action-gh-release@v1
+          uses: softprops/action-gh-release@26994186c0ac3ef5cae75ac16aa32e8153525f77
           if: startsWith(github.ref, 'refs/tags/')
           with:
             tag_name: ${{ github.ref_name }}
@@ -49,11 +49,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Stable Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
         with:
-          profile: minimal
-          target: ${{ matrix.target }}
           toolchain: stable
+          targets: ${{ matrix.target }}
       - name: Install musl-tools
         run: sudo apt update -y && sudo apt install musl-tools -y
         if: matrix.os == 'ubuntu-latest'
@@ -62,7 +61,7 @@ jobs:
       - name: Move binary
         run: mv target/${{ matrix.target }}/release/osc-cost${{ matrix.suffix }} osc-cost-${{ github.ref_name }}-${{ matrix.target }}${{ matrix.suffix }}
       - name: Upload Artefact to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@26994186c0ac3ef5cae75ac16aa32e8153525f77
         if: startsWith(github.ref, 'refs/tags/')
         with:
           tag_name: ${{ github.ref_name }}
