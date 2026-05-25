@@ -31,8 +31,8 @@ spreadsheet-ods = "1.0.1"
 comfy-table = "6.1.4"
 prometheus = "0.14.0"
 tokio-stream = "0.1.12"
-strum_macros = "0.24.3"
-strum = "0.24.1"
+strum_macros = "0.28.0"
+strum = "0.28.0"
 axum = { version = "0.8.7", features = ["json"] }
 
 [[bin]]
