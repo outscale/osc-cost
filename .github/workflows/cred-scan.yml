@@ -13,6 +13,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Scan credentials
-      uses: outscale-dev/cred-scan@main
+      uses: outscale/cred-scan@main
       with:
         scan_path: "./"
