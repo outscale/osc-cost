@@ -28,7 +28,7 @@ aws-sdk-s3 = "1.110.0"
 tokio = { version = "1", features = ["full"] }
 icu_locale_core = "^2.0"
 spreadsheet-ods = "1.0.1"
-comfy-table = "6.1.4"
+comfy-table = "7.0.0"
 prometheus = "0.14.0"
 tokio-stream = "0.1.12"
 strum_macros = "0.24.3"
