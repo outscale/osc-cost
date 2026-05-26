@@ -1,7 +1,7 @@
 version: '3'
 services:
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus@sha256:e4254400b85610324913f0dc4acf92603d9984e7519414c5a12811aa6146acc3
     volumes:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
     networks:
@@ -9,7 +9,7 @@ services:
     ports:
       - 9090:9090
   osc-cost:
-    image: outscale/osc-cost:v0.7.0
+    image: outscale/osc-cost:v0.7.0@sha256:348768f3b1f8c4e9d857fe75446dc3919c127c44d76cbdd3a8e574ca2e45df51
     networks:
       - localprom
     ports:
@@ -20,7 +20,7 @@ services:
      # OSC_SECRET_KEY: OSC_SECRET_KEY
      # OSC_REGION: OSC_REGION     
   node-exporter:
-    image: prom/node-exporter
+    image: prom/node-exporter@sha256:e9cff4fc67b1818f8c97adb115b9f12c9a54b533de86765d4a0effc01b357205
     networks:
       - localprom
     ports:
