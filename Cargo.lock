@@ -2310,7 +2310,7 @@ checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
 name = "osc-cost"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "aws-config",
  "aws-credential-types",

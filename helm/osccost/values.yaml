@@ -67,7 +67,7 @@ osccost:
       # -- Outscale provider image
       image: outscale/osc-cost
       # -- Outscale provider image tag
-      imageTag: "v0.7.0"
+      imageTag: "v0.8.0"
       # -- ImagePullPolcy to use (IfNotPresent, Never, Always)
       pullPolicy: Always
       # -- Additional securityContext to add

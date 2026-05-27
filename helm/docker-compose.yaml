@@ -9,7 +9,7 @@ services:
     ports:
       - 9090:9090
   osc-cost:
-    image: outscale/osc-cost:v0.7.0@sha256:348768f3b1f8c4e9d857fe75446dc3919c127c44d76cbdd3a8e574ca2e45df51
+    image: outscale/osc-cost:v0.8.0
     networks:
       - localprom
     ports:
