@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Outscale SAS
 # SPDX-License-Identifier: BSD-3-Clause
 # syntax=docker/dockerfile:1
-FROM rust:1.94-trixie@sha256:652612f07bfbbdfa3af34761c1e435094c00dde4a98036132fca28c7bb2b165c AS build-env
+FROM rust:1.95-trixie@sha256:f49565f188ee00bc2a18dd418183f2c5f23ef7d6e691890517ed341a598f67c3 AS build-env
 WORKDIR /app
 COPY . /app
 RUN cargo build --release --locked
