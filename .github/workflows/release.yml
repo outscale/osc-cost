@@ -19,7 +19,7 @@ jobs:
             fetch-depth: 0
 
         - name: Create Release
-          uses: softprops/action-gh-release@26994186c0ac3ef5cae75ac16aa32e8153525f77
+          uses: softprops/action-gh-release@9ed3cf9a6863b31f005d951c8d19de20628cf4eb
           if: startsWith(github.ref, 'refs/tags/')
           with:
             tag_name: ${{ github.ref_name }}
@@ -61,7 +61,7 @@ jobs:
       - name: Move binary
         run: mv target/${{ matrix.target }}/release/osc-cost${{ matrix.suffix }} osc-cost-${{ github.ref_name }}-${{ matrix.target }}${{ matrix.suffix }}
       - name: Upload Artefact to release
-        uses: softprops/action-gh-release@26994186c0ac3ef5cae75ac16aa32e8153525f77
+        uses: softprops/action-gh-release@9ed3cf9a6863b31f005d951c8d19de20628cf4eb
         if: startsWith(github.ref, 'refs/tags/')
         with:
           tag_name: ${{ github.ref_name }}
