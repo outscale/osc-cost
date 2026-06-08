@@ -12,13 +12,13 @@ jobs:
   reuse-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - name: Reuse specification test
         run: make reuse-test
   format-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - name: Stable Rust with rustfmt
         uses: ./.github/actions/install_toolchain
       - name: Check code format
@@ -29,7 +29,7 @@ jobs:
     environment: eu-west-2
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - name: Stable Rust with rustfmt
         uses: ./.github/actions/install_toolchain
       - name: Run tests
@@ -38,7 +38,7 @@ jobs:
     environment: eu-west-2
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - name: Stable Rust with rustfmt
         uses: ./.github/actions/install_toolchain
       - name: Run tests
@@ -46,7 +46,7 @@ jobs:
   integration-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - name: Install musl-tools
         run: sudo apt update -y && sudo apt install musl-tools -y
       - name: Stable Rust with rustfmt
