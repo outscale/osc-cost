@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-    - uses: rust-lang/crates-io-auth-action@bbd81622f20ce9e2dd9622e3218b975523e45bbe
+    - uses: rust-lang/crates-io-auth-action@9f93ac2286e4f1a6e86b5f77b890fda4566f5c03
       id: auth
     - name: Cargo publish
       run: cargo publish
