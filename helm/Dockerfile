@@ -6,7 +6,7 @@ WORKDIR /app
 COPY . /app
 RUN cargo build --release --locked
 
-FROM gcr.io/distroless/cc-debian13@sha256:8b5d1db6d2253036a53cb8362d3e3fa82a7caf84c247772c46a023166c64e977
+FROM gcr.io/distroless/cc-debian13@sha256:159783207c2cd44c2aa5715961d13c8612368ac9bd450f887e3f08fc8ea461e3
 COPY --from=build-env /app/target/release/osc-cost-exporter /
 EXPOSE 8080
 ENTRYPOINT ["/osc-cost-exporter", "--bind", "0.0.0.0:8080"]
